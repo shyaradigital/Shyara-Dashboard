@@ -18,7 +18,6 @@ export default function FinancialPage() {
   const { checkPermission } = useAuth()
   const {
     incomes,
-    summary: incomeSummary,
     isLoading: incomeLoading,
     addIncome,
     updateIncome,
@@ -28,7 +27,6 @@ export default function FinancialPage() {
 
   const {
     expenses,
-    summary: expenseSummary,
     isLoading: expenseLoading,
     addExpense,
     updateExpense,

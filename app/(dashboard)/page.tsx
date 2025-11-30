@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Percent,
-  FileText,
   Lightbulb,
   Clock,
   Wallet,
