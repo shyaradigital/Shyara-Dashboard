@@ -18,6 +18,8 @@ export const ROLE_PERMISSIONS = {
     "users:create",
     "users:edit",
     "users:delete",
+    "roles:manage",
+    "auth:reset-password",
   ],
   [ROLES.MANAGER]: [
     "dashboard:view",
@@ -27,4 +29,3 @@ export const ROLE_PERMISSIONS = {
     "finances:view",
   ],
 } as const
-

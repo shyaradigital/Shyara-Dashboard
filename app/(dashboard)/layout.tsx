@@ -4,14 +4,17 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
+import { DateFilterProvider } from "@/contexts/DateFilterContext"
+import { AuthLoader } from "@/components/layout/AuthLoader"
 
-export default function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const { isAuthenticated, isLoading } = useAuth()
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, initializeAuth } = useAuth()
   const router = useRouter()
+
+  // Initialize auth on mount
+  useEffect(() => {
+    initializeAuth()
+  }, [initializeAuth])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -20,20 +23,16 @@ export default function ProtectedLayout({
   }, [isAuthenticated, isLoading, router])
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
+    return <AuthLoader />
   }
 
   if (!isAuthenticated) {
-    return null
+    return <AuthLoader />
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>
+  return (
+    <DateFilterProvider>
+      <DashboardLayout>{children}</DashboardLayout>
+    </DateFilterProvider>
+  )
 }
-
