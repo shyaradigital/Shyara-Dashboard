@@ -1,0 +1,54 @@
+# Shyara Dashboard Development Rules
+
+## Project Structure
+- This is a modular Next.js 14+ application using TypeScript, TailwindCSS, and ShadCN UI
+- Keep all features modular - each major feature should live in its own folder under `features/`
+- Each major feature should be built in a separate chat session
+- Follow the existing patterns for components, hooks, stores, and utilities
+
+## Feature Development
+- **Modularity**: Each feature gets its own folder in `features/` (e.g., `features/invoices/`, `features/finances/`)
+- **Self-contained**: Features should include their own components, hooks, types, and utilities
+- **Shared code**: Use `features/_shared/` for utilities shared across multiple features
+- **Reusability**: Place truly reusable components in `components/ui/` or `components/layout/`
+
+## Code Organization
+- **Components**: 
+  - `components/ui/` - ShadCN UI components and base components
+  - `components/layout/` - Layout components (Sidebar, Topbar, etc.)
+  - `features/[feature]/components/` - Feature-specific components
+  
+- **State Management**:
+  - Use Zustand for global state (auth, app-wide settings)
+  - Feature-specific state can use Zustand stores in `features/[feature]/store/`
+  
+- **Hooks**: 
+  - Global hooks in `hooks/`
+  - Feature-specific hooks in `features/[feature]/hooks/`
+  
+- **Types**: 
+  - Global types in `types/`
+  - Feature-specific types in `features/[feature]/types/`
+
+## Role-Based Access Control
+- Always check permissions using `useAuth().checkPermission(permission)`
+- Use role constants from `lib/constants.ts`
+- Hide UI elements based on permissions, not just routes
+
+## Styling
+- Use TailwindCSS utility classes
+- Primary brand color is purple (configured in `tailwind.config.ts`)
+- Use ShadCN UI components as base, customize as needed
+- Ensure responsive design for mobile, tablet, and desktop
+
+## Code Quality
+- Follow TypeScript strict mode
+- Use ESLint and Prettier (configured)
+- Write clean, readable, and maintainable code
+- Add proper TypeScript types for all functions and components
+
+## Next Steps
+- When building new features, create a new chat session
+- Reference this file and existing code patterns
+- Keep features independent and modular
+
