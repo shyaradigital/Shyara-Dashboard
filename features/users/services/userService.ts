@@ -5,6 +5,26 @@ const STORAGE_KEY = "shyara_users_data"
 // Track if master admin has been initialized to prevent multiple initializations
 let masterAdminInitialized = false
 
+// Storage event listener to detect when storage is cleared externally
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY) {
+      if (e.newValue === null && e.oldValue !== null) {
+        // Storage was cleared
+        console.warn("⚠️ [UserService] Storage was cleared externally!")
+        console.warn("  This may cause data loss. Users will need to be recreated.")
+        masterAdminInitialized = false // Reset flag so admin can be recreated if needed
+      } else if (e.newValue !== null && e.oldValue === null) {
+        // Storage was set (possibly from another tab)
+        console.log("ℹ️ [UserService] Storage was updated from another tab/window")
+      } else if (e.newValue !== e.oldValue) {
+        // Storage was modified
+        console.log("ℹ️ [UserService] Storage was modified from another tab/window")
+      }
+    }
+  })
+}
+
 // Initialize data from storage, create master admin ONLY if storage key doesn't exist
 const getInitialData = (): User[] => {
   if (typeof window === "undefined") return []
