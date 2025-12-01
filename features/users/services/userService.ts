@@ -60,10 +60,22 @@ const getInitialData = (): User[] => {
 
     if (typeof window !== "undefined") {
       console.log(`[UserService] Loaded ${validUsers.length} users from storage`)
+      // Debug: Verify passwords are preserved after JSON parse
+      validUsers.forEach((user, index) => {
+        console.log(`  User ${index + 1} loaded:`, {
+          id: user.id,
+          userId: user.userId,
+          email: user.email,
+          password: user.password,
+          passwordLength: user.password?.length,
+          passwordType: typeof user.password,
+        })
+      })
     }
 
     // Only create master admin if we have NO valid users AND storage was just created
     // Since storage exists, we should preserve whatever is there (even if empty)
+    // Passwords are preserved exactly as stored (JSON.parse doesn't modify strings)
     return validUsers
   } catch (error) {
     // JSON parse error - corrupted data
@@ -99,7 +111,22 @@ const saveData = (data: User[]): void => {
 
 export const userService = {
   getUsers: (): User[] => {
-    return getInitialData()
+    const users = getInitialData()
+    if (typeof window !== "undefined") {
+      console.log("🔍 [UserService] getUsers() - All users with passwords:")
+      users.forEach((user, index) => {
+        console.log(`  User ${index + 1}:`, {
+          id: user.id,
+          userId: user.userId,
+          email: user.email,
+          name: user.name,
+          password: user.password,
+          passwordLength: user.password?.length,
+          passwordCharCodes: user.password ? [...user.password].map((c) => c.charCodeAt(0)) : "N/A",
+        })
+      })
+    }
+    return users
   },
 
   getUserById: (id: string): User | null => {
@@ -125,6 +152,12 @@ export const userService = {
     const data = getInitialData()
     const lowerIdentifier = identifier.trim().toLowerCase()
 
+    if (typeof window !== "undefined") {
+      console.log("🔍 [UserService] getUserByIdentifier() called")
+      console.log("  Input identifier:", identifier, "| Length:", identifier.length)
+      console.log("  Normalized identifier:", lowerIdentifier)
+    }
+
     // Try email first, then userId
     const user = data.find((user) => {
       if (!user) return false
@@ -132,6 +165,22 @@ export const userService = {
       const userIdMatch = user.userId?.toLowerCase() === lowerIdentifier
       return emailMatch || userIdMatch
     })
+
+    if (typeof window !== "undefined") {
+      if (user) {
+        console.log("  ✅ Found user:", {
+          id: user.id,
+          userId: user.userId,
+          email: user.email,
+          name: user.name,
+          password: user.password,
+          passwordLength: user.password?.length,
+          passwordCharCodes: user.password ? [...user.password].map((c) => c.charCodeAt(0)) : "N/A",
+        })
+      } else {
+        console.log("  ❌ No user found with identifier:", identifier)
+      }
+    }
 
     return user || null
   },
@@ -165,6 +214,18 @@ export const userService = {
       throw new Error("Password must be at least 8 characters")
     }
 
+    // Debug: Log input password details
+    if (typeof window !== "undefined") {
+      console.log("🔐 [UserService] addUser() - Password input details:")
+      console.log("  Input password:", userData.password)
+      console.log("  Password length:", userData.password.length)
+      console.log(
+        "  Password char codes:",
+        [...userData.password].map((c) => c.charCodeAt(0))
+      )
+      console.log("  Password type:", typeof userData.password)
+    }
+
     // Generate unique ID using timestamp + random to avoid collisions
     const newUser: User = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -172,20 +233,49 @@ export const userService = {
       name: userData.name.trim(),
       email: userData.email.trim().toLowerCase(),
       phone: userData.phone?.trim() || undefined,
-      password: userData.password, // In production, hash this
+      password: userData.password, // Store exactly as provided - no trimming, no encoding
       role: userData.role,
       status: userData.status,
       createdAt: new Date().toISOString(),
       lastLogin: null,
     }
 
+    // Debug: Log stored user object
+    if (typeof window !== "undefined") {
+      console.log("💾 [UserService] addUser() - Stored user object:")
+      console.log("  Full user object:", JSON.parse(JSON.stringify(newUser)))
+      console.log("  Stored password:", newUser.password)
+      console.log("  Stored password length:", newUser.password.length)
+      console.log(
+        "  Stored password char codes:",
+        [...newUser.password].map((c) => c.charCodeAt(0))
+      )
+      console.log(
+        "  Password match check (input === stored):",
+        userData.password === newUser.password
+      )
+    }
+
     // Create new array with existing users + new user
     const updatedData = [...data, newUser]
     saveData(updatedData)
 
+    // Verify password after save by reading back
     if (typeof window !== "undefined") {
-      console.log(`[UserService] User added successfully - new count: ${updatedData.length}`)
-      console.log(`[UserService] Added user: ${newUser.userId} (${newUser.email})`)
+      const savedUsers = getInitialData()
+      const savedUser = savedUsers.find((u) => u.id === newUser.id)
+      console.log("✅ [UserService] User added successfully - new count:", updatedData.length)
+      console.log("  Added user:", newUser.userId, "(", newUser.email, ")")
+      if (savedUser) {
+        console.log("  🔍 Verification - Password after save/load:")
+        console.log("    Password:", savedUser.password)
+        console.log("    Password length:", savedUser.password?.length)
+        console.log(
+          "    Password char codes:",
+          savedUser.password ? [...savedUser.password].map((c) => c.charCodeAt(0)) : "N/A"
+        )
+        console.log("    Original === Saved:", userData.password === savedUser.password)
+      }
     }
 
     return newUser
@@ -224,6 +314,14 @@ export const userService = {
 
     // Create new array with updated user (immutable update)
     const updatedData = [...data]
+
+    // Handle password update: only update if password is explicitly provided and not empty
+    // This ensures we don't accidentally clear passwords
+    const passwordUpdate =
+      updates.password !== undefined && updates.password !== null && updates.password !== ""
+        ? updates.password // Store exactly as provided - no trimming
+        : updatedData[index].password // Keep existing password if not provided
+
     updatedData[index] = {
       ...updatedData[index],
       ...updates,
@@ -232,7 +330,25 @@ export const userService = {
       name: updates.name ? updates.name.trim() : updatedData[index].name,
       phone:
         updates.phone !== undefined ? updates.phone?.trim() || undefined : updatedData[index].phone,
-      password: updates.password || updatedData[index].password, // Keep existing password if not updated
+      password: passwordUpdate, // Store exactly as provided, or keep existing
+    }
+
+    // Debug: Log password update if password was changed
+    if (
+      typeof window !== "undefined" &&
+      updates.password !== undefined &&
+      updates.password !== null &&
+      updates.password !== ""
+    ) {
+      console.log("🔐 [UserService] updateUser() - Password update:")
+      console.log("  New password:", updates.password)
+      console.log("  New password length:", updates.password.length)
+      console.log(
+        "  New password char codes:",
+        [...updates.password].map((c) => c.charCodeAt(0))
+      )
+      console.log("  Stored password:", updatedData[index].password)
+      console.log("  Password match check:", updates.password === updatedData[index].password)
     }
 
     saveData(updatedData)

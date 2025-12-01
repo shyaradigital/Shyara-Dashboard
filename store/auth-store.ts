@@ -41,24 +41,61 @@ export const useAuthStore = create<AuthStore>()(
             return { success: false, error: "Email/user ID and password are required" }
           }
 
+          // Debug: Log login attempt
+          console.log("🔐 AUTH DEBUG - Login attempt")
+          console.log("  Identifier:", identifier, "| Length:", identifier.length)
+          console.log("  Password input:", password, "| Length:", password.length)
+          console.log(
+            "  Password input (char codes):",
+            [...password].map((c) => c.charCodeAt(0))
+          )
+
           // Find user by email or userId
-          // Trim and normalize the identifier
+          // Trim and normalize the identifier (but NOT the password)
           const normalizedIdentifier = identifier.trim()
           const user = userService.getUserByIdentifier(normalizedIdentifier)
 
           if (!user) {
+            console.log("  ❌ No user found with identifier:", identifier)
             return { success: false, error: "Invalid email or user ID" }
           }
 
+          // Debug: Log found user details
+          console.log("  ✅ Found user:", {
+            id: user.id,
+            userId: user.userId,
+            email: user.email,
+            name: user.name,
+            status: user.status,
+          })
+          console.log("  Stored password:", user.password, "| Length:", user.password?.length)
+          console.log(
+            "  Stored password (char codes):",
+            user.password ? [...user.password].map((c) => c.charCodeAt(0)) : "N/A"
+          )
+
           // Check if user is active
           if (user.status !== "active") {
+            console.log("  ❌ Account is disabled")
             return { success: false, error: "Account is disabled" }
           }
 
-          // Check password (in production, compare hashed passwords)
-          if (!user.password || user.password !== password) {
+          // Check password - EXACT string comparison (no trimming, no normalization)
+          // Password must match exactly as stored
+          const passwordMatch = user.password === password
+          console.log("  Password match check:")
+          console.log("    Input password === Stored password:", passwordMatch)
+          console.log("    Input password type:", typeof password)
+          console.log("    Stored password type:", typeof user.password)
+          console.log("    Input password length:", password.length)
+          console.log("    Stored password length:", user.password?.length)
+
+          if (!user.password || !passwordMatch) {
+            console.log("  ❌ Password mismatch - Authentication failed")
             return { success: false, error: "Invalid password" }
           }
+
+          console.log("  ✅ Password match - Authentication successful")
 
           // Update last login
           userService.updateUser(user.id, {
