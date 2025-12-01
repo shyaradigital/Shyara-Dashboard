@@ -67,6 +67,11 @@ const getInitialData = (): User[] => {
   }
 
   // Storage exists - try to parse it
+  // At this point, stored is guaranteed to be non-null due to earlier checks
+  if (!stored) {
+    return []
+  }
+
   try {
     const parsed = JSON.parse(stored)
 
