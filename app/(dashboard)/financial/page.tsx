@@ -12,7 +12,10 @@ import { IncomeTable } from "@/features/financial/components/IncomeTable"
 import { ExpenseTable } from "@/features/financial/components/ExpenseTable"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, List } from "lucide-react"
+import { Plus, List, Download, Upload } from "lucide-react"
+import { exportFinancialData, prepareIncomeForImport, prepareExpenseForImport, type FinancialDataExport } from "@/features/financial/utils/exportImport"
+import { ImportDataModal } from "@/features/financial/components/ImportDataModal"
+import { toast } from "@/lib/utils/toast"
 
 export default function FinancialPage() {
   const { checkPermission } = useAuth()
@@ -43,6 +46,7 @@ export default function FinancialPage() {
   // Modal states (only for Add Income/Expense)
   const [addIncomeModalOpen, setAddIncomeModalOpen] = useState(false)
   const [addExpenseModalOpen, setAddExpenseModalOpen] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
 
   // Refs for smooth scrolling
   const overviewRef = useRef<HTMLDivElement>(null)
@@ -120,6 +124,57 @@ export default function FinancialPage() {
     return success
   }
 
+  // Handle export data
+  const handleExport = () => {
+    try {
+      exportFinancialData(incomes, expenses)
+      toast.success(`Exported ${incomes.length} income and ${expenses.length} expense entries`)
+    } catch (error: any) {
+      toast.error(error.message || "Failed to export data")
+    }
+  }
+
+  // Handle import data
+  const handleImport = async (data: FinancialDataExport) => {
+    try {
+      let importedCount = 0
+      let errorCount = 0
+
+      // Import incomes
+      for (const income of data.incomes) {
+        try {
+          const incomeData = prepareIncomeForImport(income)
+          await addIncome(incomeData)
+          importedCount++
+        } catch (error) {
+          console.error("Error importing income:", error)
+          errorCount++
+        }
+      }
+
+      // Import expenses
+      for (const expense of data.expenses) {
+        try {
+          const expenseData = prepareExpenseForImport(expense)
+          await addExpense(expenseData)
+          importedCount++
+        } catch (error) {
+          console.error("Error importing expense:", error)
+          errorCount++
+        }
+      }
+
+      if (errorCount > 0) {
+        toast.error(`Imported ${importedCount} entries. ${errorCount} entries failed.`)
+      } else {
+        toast.success(`Successfully imported ${importedCount} entries`)
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to import data")
+      throw error
+    }
+  }
+
   if (!canView) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -193,6 +248,27 @@ export default function FinancialPage() {
                 <span className="hidden sm:inline">Expense List</span>
                 <span className="sm:hidden">Expense</span>
               </Button>
+              <div className="ml-auto flex gap-2">
+                <Button
+                  onClick={handleExport}
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 gap-2"
+                  disabled={incomes.length === 0 && expenses.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+                <Button
+                  onClick={() => setImportModalOpen(true)}
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span className="hidden sm:inline">Import</span>
+                </Button>
+              </div>
             </>
           )}
         </div>
@@ -312,6 +388,11 @@ export default function FinancialPage() {
             open={addExpenseModalOpen}
             onOpenChange={setAddExpenseModalOpen}
             onSave={handleAddExpense}
+          />
+          <ImportDataModal
+            open={importModalOpen}
+            onOpenChange={setImportModalOpen}
+            onImport={handleImport}
           />
         </>
       )}
