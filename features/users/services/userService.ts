@@ -195,7 +195,12 @@ export const userService = {
     const data = getInitialData()
     const index = data.findIndex((user) => user.id === id)
 
-    if (index === -1) return null
+    if (index === -1) {
+      if (typeof window !== "undefined") {
+        console.error(`[UserService] updateUser: User with id ${id} not found`)
+      }
+      return null
+    }
 
     // Validate userId format if userId is being updated
     if (updates.userId) {
@@ -217,17 +222,26 @@ export const userService = {
       }
     }
 
-    data[index] = {
-      ...data[index],
+    // Create new array with updated user (immutable update)
+    const updatedData = [...data]
+    updatedData[index] = {
+      ...updatedData[index],
       ...updates,
-      userId: updates.userId ? updates.userId.trim().toLowerCase() : data[index].userId,
-      email: updates.email ? updates.email.trim().toLowerCase() : data[index].email,
-      name: updates.name ? updates.name.trim() : data[index].name,
-      phone: updates.phone !== undefined ? updates.phone?.trim() || undefined : data[index].phone,
-      password: updates.password || data[index].password, // Keep existing password if not updated
+      userId: updates.userId ? updates.userId.trim().toLowerCase() : updatedData[index].userId,
+      email: updates.email ? updates.email.trim().toLowerCase() : updatedData[index].email,
+      name: updates.name ? updates.name.trim() : updatedData[index].name,
+      phone:
+        updates.phone !== undefined ? updates.phone?.trim() || undefined : updatedData[index].phone,
+      password: updates.password || updatedData[index].password, // Keep existing password if not updated
     }
-    saveData(data)
-    return data[index]
+
+    saveData(updatedData)
+
+    if (typeof window !== "undefined") {
+      console.log(`[UserService] User updated: ${updatedData[index].userId}`)
+    }
+
+    return updatedData[index]
   },
 
   deleteUser: (id: string): boolean => {
