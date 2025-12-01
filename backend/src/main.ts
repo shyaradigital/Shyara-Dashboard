@@ -8,10 +8,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS
-  const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:3000";
+  const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:3000,https://dashboard.shyara.co.in";
   app.enableCors({
-    origin: corsOrigin === "*" ? true : corsOrigin.split(","),
+    origin: corsOrigin === "*" ? true : corsOrigin.split(",").map((origin) => origin.trim()),
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   });
 
   // Rate limiting for auth endpoints
