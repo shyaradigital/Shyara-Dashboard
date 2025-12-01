@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { User, UserFilters, UserFormData } from "@/features/users/types/user";
+import type { UserFilters, UserFormData } from "@/features/users/types/user";
 
 export interface UserResponse {
   id: string;

@@ -1,7 +1,8 @@
 import { create } from "zustand"
 import type { User, Permission } from "@/types"
 import { type Role } from "@/lib/constants"
-import { authApi, setToken, clearToken } from "@/lib/api/auth"
+import { authApi } from "@/lib/api/auth"
+import { setToken, clearToken } from "@/lib/api/client"
 import type { AxiosError } from "axios"
 
 interface AuthStore extends AuthState {

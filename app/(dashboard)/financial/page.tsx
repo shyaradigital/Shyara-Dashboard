@@ -97,21 +97,27 @@ export default function FinancialPage() {
   const canEdit = checkPermission("finances:edit")
 
   // Handle add income with modal close
-  const handleAddIncome = async (income: Parameters<typeof addIncome>[0]) => {
+  const handleAddIncome = async (
+    income: Parameters<typeof addIncome>[0]
+  ): Promise<boolean> => {
     const success = await addIncome(income)
     if (success) {
       setAddIncomeModalOpen(false)
     }
     // Error is handled by the hook with toast notification
+    return success
   }
 
   // Handle add expense with modal close
-  const handleAddExpense = async (expense: Parameters<typeof addExpense>[0]) => {
+  const handleAddExpense = async (
+    expense: Parameters<typeof addExpense>[0]
+  ): Promise<boolean> => {
     const success = await addExpense(expense)
     if (success) {
       setAddExpenseModalOpen(false)
     }
     // Error is handled by the hook with toast notification
+    return success
   }
 
   if (!canView) {

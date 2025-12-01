@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useDateFilter } from "@/contexts/DateFilterContext"
 import { useFinancialSummary } from "@/features/financial/hooks/useFinancialSummary"
@@ -27,6 +26,8 @@ import { AddIncomeModal } from "@/features/financial/components/AddIncomeModal"
 import { AddExpenseModal } from "@/features/financial/components/AddExpenseModal"
 import { useIncome } from "@/features/financial/hooks/useIncome"
 import { useExpenses } from "@/features/financial/hooks/useExpenses"
+import type { Income } from "@/features/financial/types/income"
+import type { Expense } from "@/features/financial/types/expense"
 import { cn } from "@/lib/utils"
 
 interface TopbarProps {
@@ -35,7 +36,6 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { user, logout, checkPermission } = useAuth()
-  const router = useRouter()
   const { dateFilter, setDateFilter } = useDateFilter()
   const canEditFinances = checkPermission("finances:edit")
   const canViewFinances = checkPermission("finances:view")
@@ -98,17 +98,21 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
   const snapshot = getFinancialSnapshot()
 
-  const handleAddIncome = (income: any) => {
+  const handleAddIncome = async (income: Omit<Income, "id" | "createdAt" | "updatedAt">) => {
     if (addIncome) {
-      addIncome(income)
-      setAddIncomeModalOpen(false)
+      const success = await addIncome(income)
+      if (success) {
+        setAddIncomeModalOpen(false)
+      }
     }
   }
 
-  const handleAddExpense = (expense: any) => {
+  const handleAddExpense = async (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">) => {
     if (addExpense) {
-      addExpense(expense)
-      setAddExpenseModalOpen(false)
+      const success = await addExpense(expense)
+      if (success) {
+        setAddExpenseModalOpen(false)
+      }
     }
   }
 

@@ -59,7 +59,7 @@ export default function UsersPage() {
     try {
       await addUser(userData)
       setAddUserModalOpen(false)
-    } catch (error: any) {
+    } catch (error) {
       // Error is handled by the hook with toast notification
       // Keep modal open so user can fix errors
     }
@@ -78,7 +78,7 @@ export default function UsersPage() {
       await updateUser(id, updates)
       setEditUserModalOpen(false)
       setEditingUser(null)
-    } catch (error: any) {
+    } catch (error) {
       // Error is handled by the hook with toast notification
       // Keep modal open so user can fix errors
     }

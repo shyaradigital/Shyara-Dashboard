@@ -1,5 +1,4 @@
 import { apiClient } from "./client";
-import type { User } from "@/types";
 
 export interface LoginRequest {
   identifier: string;
