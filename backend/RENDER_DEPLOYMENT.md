@@ -63,27 +63,40 @@ openssl rand -base64 32
 
 ## Step 4: Run Database Migrations
 
-After the backend service is created:
+After the backend service is created and deployed successfully:
 
-1. Go to the backend service
+1. Go to the backend service (`Shyara-Dashboard-Backend`)
 2. Click on **"Shell"** tab
 3. Run:
 ```bash
-cd backend
 npx prisma migrate deploy
 npx prisma db seed
 ```
 
-Or add this as a one-time script in the build command:
-```bash
-npm install && npm run build && npx prisma migrate deploy && npx prisma db seed
-```
+**Note:** Since Root Directory is set to `backend`, you're already in the backend folder in the shell.
 
 ## Step 5: Verify Deployment
 
-1. Check the service logs to ensure it started successfully
-2. The API should be available at: `https://shyara-backend.onrender.com/api`
-3. Test the health endpoint (if you have one) or try: `https://shyara-backend.onrender.com/api/auth/login`
+1. **Check Service Status:**
+   - Service should show **"Live"** status (green) in the dashboard
+   - If it shows "Failed deploy" (red), see Troubleshooting section below
+
+2. **Check Logs:**
+   - Click on the backend service
+   - Go to **"Logs"** tab
+   - Look for: `🚀 Application is running on port XXXX`
+   - No error messages should appear
+
+3. **Test the API:**
+   - The API should be available at: `https://shyara-dashboard-backend.onrender.com/api`
+   - Test endpoint: `https://shyara-dashboard-backend.onrender.com/api/auth/login`
+   - You should get a response (even if it's an error, it means the server is running)
+
+4. **Run Database Migrations:**
+   - Go to **"Shell"** tab in the backend service
+   - Run: `npx prisma migrate deploy`
+   - Run: `npx prisma db seed`
+   - Check for success messages
 
 ## Step 6: Update Frontend API URL
 
@@ -94,20 +107,55 @@ NEXT_PUBLIC_API_URL=https://shyara-backend.onrender.com/api
 
 ## Troubleshooting
 
+### ❌ Backend Service Failed to Deploy
+
+If you see "Failed deploy" status:
+
+1. **Click on the backend service** (`Shyara-Dashboard-Backend`)
+2. **Go to "Logs" tab** to see the error
+3. **Common issues and fixes:**
+
+   **Issue: "Cannot find module" or "Missing dependencies"**
+   - ✅ **Fix:** Ensure `Root Directory` is set to `backend`
+   - ✅ **Fix:** Check that `package.json` exists in the backend folder
+   - ✅ **Fix:** Verify Build Command is: `npm install && npm run build`
+
+   **Issue: "Prisma Client not generated"**
+   - ✅ **Fix:** The `postinstall` script should run automatically
+   - ✅ **Fix:** If not, add to Build Command: `npm install && npm run build && npx prisma generate`
+
+   **Issue: "Database connection failed"**
+   - ✅ **Fix:** Verify `DATABASE_URL` environment variable is set correctly
+   - ✅ **Fix:** Use Internal Database URL (without `.singapore-postgres.render.com`)
+   - ✅ **Fix:** Ensure database service is "Available" (green status)
+
+   **Issue: "Port already in use" or "EADDRINUSE"**
+   - ✅ **Fix:** Remove `PORT` environment variable (Render auto-assigns)
+   - ✅ **Fix:** Or set `PORT` to `10000` or leave empty
+
+   **Issue: "JWT_SECRET not found"**
+   - ✅ **Fix:** Add `JWT_SECRET` environment variable
+   - ✅ **Fix:** Generate with: `openssl rand -base64 32`
+
+4. **After fixing, click "Manual Deploy" → "Deploy latest commit"**
+
 ### CORS Issues:
 - Ensure `CORS_ORIGIN` includes your frontend domain: `https://dashboard.shyara.co.in`
 - Check that the backend service has been redeployed after CORS changes
 - Verify the backend service is running (check logs)
+- Backend service must show "Live" status (green)
 
 ### Database Connection Issues:
-- Verify `DATABASE_URL` is correct
-- Check if database is accessible from Render's network
-- Ensure migrations have been run
+- Verify `DATABASE_URL` is correct (use Internal Database URL)
+- Check if database service shows "Available" status
+- Ensure migrations have been run (Step 4)
+- Database and backend must be in the same region (Singapore)
 
 ### Build Failures:
-- Check that `Root Directory` is set to `backend`
+- Check that `Root Directory` is set to `backend` ⚠️ **CRITICAL**
 - Verify `package.json` exists in the backend folder
 - Check build logs for specific errors
+- Ensure all environment variables are set correctly
 
 ## Important Notes
 
