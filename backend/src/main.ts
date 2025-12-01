@@ -16,13 +16,14 @@ async function bootstrap() {
     allowedHeaders: ["Content-Type", "Authorization"],
   });
 
-  // Rate limiting for auth endpoints
+  // Rate limiting for auth endpoints (skip OPTIONS requests)
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // limit each IP to 5 requests per windowMs
     message: "Too many login attempts, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === "OPTIONS", // Skip rate limiting for preflight requests
   });
 
   app.use("/api/auth/login", authLimiter);
