@@ -47,7 +47,7 @@ const getInitialData = (): Role[] => {
 const saveData = (customRoles: Role[]): void => {
   if (typeof window === "undefined") return
   // Only save custom roles, not built-in ones
-  const builtInRoleNames = new Set(Object.values(ROLES))
+  const builtInRoleNames = new Set(Object.values(ROLES) as string[])
   const rolesToSave = customRoles.filter((r) => !builtInRoleNames.has(r.name))
   localStorage.setItem(STORAGE_KEY, JSON.stringify(rolesToSave))
 }
@@ -72,7 +72,7 @@ export const roleService = {
     }
 
     // Check if trying to create a built-in role
-    const builtInRoleNames = new Set(Object.values(ROLES))
+    const builtInRoleNames = new Set(Object.values(ROLES) as string[])
     if (builtInRoleNames.has(role.name)) {
       throw new Error("Cannot create a built-in role")
     }
@@ -94,7 +94,7 @@ export const roleService = {
     if (index === -1) return null
 
     // Prevent updating built-in roles
-    const builtInRoleNames = new Set(Object.values(ROLES))
+    const builtInRoleNames = new Set(Object.values(ROLES) as string[])
     if (builtInRoleNames.has(name)) {
       throw new Error("Cannot modify built-in roles")
     }
@@ -112,7 +112,7 @@ export const roleService = {
     const data = getInitialData()
 
     // Prevent deleting built-in roles
-    const builtInRoleNames = new Set(Object.values(ROLES))
+    const builtInRoleNames = new Set(Object.values(ROLES) as string[])
     if (builtInRoleNames.has(name)) {
       throw new Error("Cannot delete built-in roles")
     }
