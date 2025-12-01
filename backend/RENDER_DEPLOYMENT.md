@@ -75,6 +75,15 @@ npx prisma db seed
 
 **Note:** Since Root Directory is set to `backend`, you're already in the backend folder in the shell.
 
+**If you see "No migration found":**
+- The initial migration has been created in the repository
+- After the latest code is deployed, run `npx prisma migrate deploy` again
+- This will create all the database tables
+
+**If seeding fails:**
+- The `prisma.seed` configuration has been added to `package.json`
+- Run `npx prisma db seed` after migrations are applied
+
 ## Step 5: Verify Deployment
 
 1. **Check Service Status:**
