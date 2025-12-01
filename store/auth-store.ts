@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthStore>()(
           console.log("  Password input:", password, "| Length:", password.length)
           console.log(
             "  Password input (char codes):",
-            [...password].map((c) => c.charCodeAt(0))
+            Array.from(password).map((c) => c.charCodeAt(0))
           )
 
           // Find user by email or userId
@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthStore>()(
           console.log("  Stored password:", user.password, "| Length:", user.password?.length)
           console.log(
             "  Stored password (char codes):",
-            user.password ? [...user.password].map((c) => c.charCodeAt(0)) : "N/A"
+            user.password ? Array.from(user.password).map((c) => c.charCodeAt(0)) : "N/A"
           )
 
           // Check if user is active

@@ -279,7 +279,9 @@ export const userService = {
           name: user.name,
           password: user.password,
           passwordLength: user.password?.length,
-          passwordCharCodes: user.password ? [...user.password].map((c) => c.charCodeAt(0)) : "N/A",
+          passwordCharCodes: user.password
+            ? Array.from(user.password).map((c) => c.charCodeAt(0))
+            : "N/A",
         })
       })
     }
@@ -332,7 +334,9 @@ export const userService = {
           name: user.name,
           password: user.password,
           passwordLength: user.password?.length,
-          passwordCharCodes: user.password ? [...user.password].map((c) => c.charCodeAt(0)) : "N/A",
+          passwordCharCodes: user.password
+            ? Array.from(user.password).map((c) => c.charCodeAt(0))
+            : "N/A",
         })
       } else {
         console.log("  ❌ No user found with identifier:", identifier)
@@ -385,7 +389,7 @@ export const userService = {
       console.log("  Password length:", userData.password.length)
       console.log(
         "  Password char codes:",
-        [...userData.password].map((c) => c.charCodeAt(0))
+        Array.from(userData.password).map((c) => c.charCodeAt(0))
       )
       console.log("  Password type:", typeof userData.password)
     }
@@ -412,7 +416,7 @@ export const userService = {
       console.log("  Stored password length:", newUser.password.length)
       console.log(
         "  Stored password char codes:",
-        [...newUser.password].map((c) => c.charCodeAt(0))
+        Array.from(newUser.password).map((c) => c.charCodeAt(0))
       )
       console.log(
         "  Password match check (input === stored):",
@@ -441,7 +445,7 @@ export const userService = {
           console.log("    Password length:", savedUser.password?.length)
           console.log(
             "    Password char codes:",
-            savedUser.password ? [...savedUser.password].map((c) => c.charCodeAt(0)) : "N/A"
+            savedUser.password ? Array.from(savedUser.password).map((c) => c.charCodeAt(0)) : "N/A"
           )
           console.log("    Original === Saved:", userData.password === savedUser.password)
         } else {
@@ -520,7 +524,7 @@ export const userService = {
       console.log("  New password length:", updates.password.length)
       console.log(
         "  New password char codes:",
-        [...updates.password].map((c) => c.charCodeAt(0))
+        Array.from(updates.password).map((c) => c.charCodeAt(0))
       )
       console.log("  Stored password:", updatedData[index].password)
       console.log("  Password match check:", updates.password === updatedData[index].password)
