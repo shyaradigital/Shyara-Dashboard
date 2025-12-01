@@ -32,7 +32,7 @@ PORT=10000
 CORS_ORIGIN=https://dashboard.shyara.co.in,http://localhost:3000
 JWT_SECRET=<generate-a-strong-secret-here>
 JWT_EXPIRES_IN=7d
-DATABASE_URL=<your-postgresql-connection-string>
+DATABASE_URL=postgresql://shyara_dashboard_db_user:otPQX0rI3L3kdeJHN7ubNBwcXmnQCC7i@dpg-d4mqk5obdp1s73er482g-a/shyara_dashboard_db
 ```
 
 **To generate JWT_SECRET:**
@@ -40,17 +40,26 @@ DATABASE_URL=<your-postgresql-connection-string>
 openssl rand -base64 32
 ```
 
-**DATABASE_URL format:**
-```
-postgresql://username:password@hostname:5432/database_name?sslmode=require
-```
+**Note:** Use the **Internal Database URL** for better performance (services in the same region communicate over private network).
 
-## Step 3: Create PostgreSQL Database (if not exists)
+## Step 3: PostgreSQL Database ✅ (Already Created)
 
-1. In Render Dashboard, click **"New +"** → **"PostgreSQL"**
-2. Name it: `shyara-db` (or your preferred name)
-3. Copy the **Internal Database URL** or **External Database URL**
-4. Use this as your `DATABASE_URL` in the backend service
+**Database Details:**
+- **Name**: `shyara-dashboard-db`
+- **Hostname**: `dpg-d4mqk5obdp1s73er482g-a`
+- **Database**: `shyara_dashboard_db`
+- **Username**: `shyara_dashboard_db_user`
+- **Port**: `5432`
+
+**Connection URLs:**
+- **Internal Database URL** (Recommended for Render services):
+  ```
+  postgresql://shyara_dashboard_db_user:otPQX0rI3L3kdeJHN7ubNBwcXmnQCC7i@dpg-d4mqk5obdp1s73er482g-a/shyara_dashboard_db
+  ```
+- **External Database URL** (For external access):
+  ```
+  postgresql://shyara_dashboard_db_user:otPQX0rI3L3kdeJHN7ubNBwcXmnQCC7i@dpg-d4mqk5obdp1s73er482g-a.singapore-postgres.render.com/shyara_dashboard_db
+  ```
 
 ## Step 4: Run Database Migrations
 
