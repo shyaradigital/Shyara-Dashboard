@@ -39,6 +39,17 @@ const INCOME_CATEGORIES: IncomeCategory[] = [
   "POS",
   "Consultation",
   "Freelancing",
+  "Wedding Video Invitation",
+  "Engagement Video Invitation",
+  "Wedding Card Invitation",
+  "Engagement Card Invitation",
+  "Anniversary Card Invitation",
+  "Anniversary Video Invitation",
+  "Birthday Wish Video",
+  "Birthday Wish Card",
+  "Birthday Video Invitation",
+  "Birthday Card Invitation",
+  "Mundi",
   "Other",
 ]
 

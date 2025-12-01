@@ -8,6 +8,17 @@ export enum IncomeCategory {
   POS = "POS",
   Consultation = "Consultation",
   Freelancing = "Freelancing",
+  WeddingVideoInvitation = "Wedding Video Invitation",
+  EngagementVideoInvitation = "Engagement Video Invitation",
+  WeddingCardInvitation = "Wedding Card Invitation",
+  EngagementCardInvitation = "Engagement Card Invitation",
+  AnniversaryCardInvitation = "Anniversary Card Invitation",
+  AnniversaryVideoInvitation = "Anniversary Video Invitation",
+  BirthdayWishVideo = "Birthday Wish Video",
+  BirthdayWishCard = "Birthday Wish Card",
+  BirthdayVideoInvitation = "Birthday Video Invitation",
+  BirthdayCardInvitation = "Birthday Card Invitation",
+  Mundi = "Mundi",
   Other = "Other",
 }
 

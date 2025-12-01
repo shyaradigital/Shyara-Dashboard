@@ -134,6 +134,17 @@ export class IncomeService {
       POS: 0,
       Consultation: 0,
       Freelancing: 0,
+      "Wedding Video Invitation": 0,
+      "Engagement Video Invitation": 0,
+      "Wedding Card Invitation": 0,
+      "Engagement Card Invitation": 0,
+      "Anniversary Card Invitation": 0,
+      "Anniversary Video Invitation": 0,
+      "Birthday Wish Video": 0,
+      "Birthday Wish Card": 0,
+      "Birthday Video Invitation": 0,
+      "Birthday Card Invitation": 0,
+      Mundi: 0,
       Other: 0,
     };
 
