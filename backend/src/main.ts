@@ -9,11 +9,18 @@ async function bootstrap() {
 
   // Enable CORS
   const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:3000,https://dashboard.shyara.co.in";
+  const allowedOrigins = corsOrigin === "*" 
+    ? true 
+    : corsOrigin.split(",").map((origin) => origin.trim());
+  
   app.enableCors({
-    origin: corsOrigin === "*" ? true : corsOrigin.split(",").map((origin) => origin.trim()),
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    exposedHeaders: ["Content-Type", "Authorization"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Rate limiting for auth endpoints (skip OPTIONS requests)
