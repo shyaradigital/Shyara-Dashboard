@@ -45,16 +45,18 @@ export class IncomeController {
   @Permissions("finances:view")
   @ApiOperation({ summary: "Get all income entries" })
   @ApiResponse({ status: 200, description: "List of incomes", type: [IncomeResponseDto] })
-  findAll(@Query() filters: IncomeFiltersDto, @CurrentUser() user: any) {
-    return this.incomeService.findAll(filters, user?.id);
+  findAll(@Query() filters: IncomeFiltersDto) {
+    // All users with finances:view permission can see all income entries (company-wide data)
+    return this.incomeService.findAll(filters);
   }
 
   @Get("summary")
   @Permissions("finances:view")
   @ApiOperation({ summary: "Get income summary/analytics" })
   @ApiResponse({ status: 200, description: "Income summary", type: IncomeSummaryDto })
-  getSummary(@Query() filters: IncomeFiltersDto, @CurrentUser() user: any) {
-    return this.incomeService.getSummary(filters, user?.id);
+  getSummary(@Query() filters: IncomeFiltersDto) {
+    // All users with finances:view permission can see all income summaries (company-wide data)
+    return this.incomeService.getSummary(filters);
   }
 
   @Get(":id")

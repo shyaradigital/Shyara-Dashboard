@@ -45,16 +45,18 @@ export class ExpenseController {
   @Permissions("finances:view")
   @ApiOperation({ summary: "Get all expense entries" })
   @ApiResponse({ status: 200, description: "List of expenses", type: [ExpenseResponseDto] })
-  findAll(@Query() filters: ExpenseFiltersDto, @CurrentUser() user: any) {
-    return this.expenseService.findAll(filters, user?.id);
+  findAll(@Query() filters: ExpenseFiltersDto) {
+    // All users with finances:view permission can see all expense entries (company-wide data)
+    return this.expenseService.findAll(filters);
   }
 
   @Get("summary")
   @Permissions("finances:view")
   @ApiOperation({ summary: "Get expense summary/analytics" })
   @ApiResponse({ status: 200, description: "Expense summary", type: ExpenseSummaryDto })
-  getSummary(@Query() filters: ExpenseFiltersDto, @CurrentUser() user: any) {
-    return this.expenseService.getSummary(filters, user?.id);
+  getSummary(@Query() filters: ExpenseFiltersDto) {
+    // All users with finances:view permission can see all expense summaries (company-wide data)
+    return this.expenseService.getSummary(filters);
   }
 
   @Get(":id")

@@ -21,12 +21,11 @@ export class ExpenseService {
     return expense;
   }
 
-  async findAll(filters?: ExpenseFiltersDto, userId?: string) {
+  async findAll(filters?: ExpenseFiltersDto) {
     const where: any = {};
 
-    if (userId) {
-      where.userId = userId;
-    }
+    // Note: Removed userId filtering - all users with finances:view permission can see all expenses
+    // userId is still stored when creating records for audit trail purposes
 
     if (filters?.category) {
       where.category = filters.category;
@@ -95,8 +94,8 @@ export class ExpenseService {
     return { message: `Expense entry has been deleted` };
   }
 
-  async getSummary(filters?: ExpenseFiltersDto, userId?: string): Promise<ExpenseSummaryDto> {
-    const expenses = await this.findAll(filters, userId);
+  async getSummary(filters?: ExpenseFiltersDto): Promise<ExpenseSummaryDto> {
+    const expenses = await this.findAll(filters);
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();

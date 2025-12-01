@@ -25,24 +25,27 @@ export class FinancialController {
   @Permissions("finances:view")
   @ApiOperation({ summary: "Get financial summary" })
   @ApiResponse({ status: 200, description: "Financial summary", type: FinancialSummaryDto })
-  getSummary(@CurrentUser() user: any) {
-    return this.financialService.getSummary(user?.id);
+  getSummary() {
+    // All users with finances:view permission can see all financial summaries (company-wide data)
+    return this.financialService.getSummary();
   }
 
   @Get("analytics")
   @Permissions("finances:view")
   @ApiOperation({ summary: "Get revenue analytics" })
   @ApiResponse({ status: 200, description: "Revenue analytics", type: RevenueAnalyticsDto })
-  getAnalytics(@CurrentUser() user: any) {
-    return this.financialService.getRevenueAnalytics(user?.id);
+  getAnalytics() {
+    // All users with finances:view permission can see all analytics (company-wide data)
+    return this.financialService.getRevenueAnalytics();
   }
 
   @Get("balance-sheet")
   @Permissions("finances:view")
   @ApiOperation({ summary: "Get balance sheet" })
   @ApiResponse({ status: 200, description: "Balance sheet", type: BalanceSheetDto })
-  getBalanceSheet(@CurrentUser() user: any) {
-    return this.financialService.getBalanceSheet(user?.id);
+  getBalanceSheet() {
+    // All users with finances:view permission can see balance sheet (company-wide data)
+    return this.financialService.getBalanceSheet();
   }
 }
 

@@ -21,12 +21,11 @@ export class IncomeService {
     return income;
   }
 
-  async findAll(filters?: IncomeFiltersDto, userId?: string) {
+  async findAll(filters?: IncomeFiltersDto) {
     const where: any = {};
 
-    if (userId) {
-      where.userId = userId;
-    }
+    // Note: Removed userId filtering - all users with finances:view permission can see all income
+    // userId is still stored when creating records for audit trail purposes
 
     if (filters?.category) {
       where.category = filters.category;
@@ -95,8 +94,8 @@ export class IncomeService {
     return { message: `Income entry has been deleted` };
   }
 
-  async getSummary(filters?: IncomeFiltersDto, userId?: string): Promise<IncomeSummaryDto> {
-    const incomes = await this.findAll(filters, userId);
+  async getSummary(filters?: IncomeFiltersDto): Promise<IncomeSummaryDto> {
+    const incomes = await this.findAll(filters);
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();

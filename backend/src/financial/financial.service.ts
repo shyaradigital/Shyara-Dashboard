@@ -12,9 +12,10 @@ export class FinancialService {
     private expenseService: ExpenseService
   ) {}
 
-  async getSummary(userId?: string): Promise<FinancialSummaryDto> {
-    const incomeSummary = await this.incomeService.getSummary(undefined, userId);
-    const expenseSummary = await this.expenseService.getSummary(undefined, userId);
+  async getSummary(): Promise<FinancialSummaryDto> {
+    // All users with finances:view permission can see all financial data (company-wide)
+    const incomeSummary = await this.incomeService.getSummary(undefined);
+    const expenseSummary = await this.expenseService.getSummary(undefined);
 
     return {
       totalIncome: incomeSummary.total,
@@ -25,9 +26,10 @@ export class FinancialService {
     };
   }
 
-  async getRevenueAnalytics(userId?: string): Promise<RevenueAnalyticsDto> {
-    const incomes = await this.incomeService.findAll(undefined, userId);
-    const expenses = await this.expenseService.findAll(undefined, userId);
+  async getRevenueAnalytics(): Promise<RevenueAnalyticsDto> {
+    // All users with finances:view permission can see all analytics (company-wide)
+    const incomes = await this.incomeService.findAll(undefined);
+    const expenses = await this.expenseService.findAll(undefined);
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -240,8 +242,8 @@ export class FinancialService {
     };
   }
 
-  async getBalanceSheet(userId?: string): Promise<BalanceSheetDto> {
-    const summary = await this.getSummary(userId);
+  async getBalanceSheet(): Promise<BalanceSheetDto> {
+    const summary = await this.getSummary();
     return {
       assets: summary.totalIncome,
       liabilities: summary.totalExpenses,
