@@ -138,11 +138,14 @@ If you see "Failed deploy" status:
    - ✅ **Fix:** Generate with: `openssl rand -base64 32`
 
    **Issue: "Cannot find module '/opt/render/project/src/backend/dist/main.js'"**
-   - ✅ **Fix:** This usually means the build output wasn't preserved
-   - ✅ **Fix:** Verify Root Directory is set to `backend`
-   - ✅ **Fix:** Check if dist folder exists by using Shell: `ls -la dist/`
-   - ✅ **Fix:** Try using absolute path in start command: `node ./dist/main.js`
-   - ✅ **Fix:** Or verify build actually created the file by checking build logs for "Uploading build" message
+   - ✅ **Fix:** This usually means the build output wasn't preserved or path is wrong
+   - ✅ **Fix:** Verify Root Directory is set to `backend` ⚠️ **CRITICAL**
+   - ✅ **Fix:** Use Shell tab to check if dist folder exists: `ls -la dist/`
+   - ✅ **Fix:** Check if main.js exists: `ls -la dist/main.js`
+   - ✅ **Fix:** Verify you're in the right directory: `pwd` (should show backend directory)
+   - ✅ **Fix:** If dist folder doesn't exist, the build might have failed silently - check build logs
+   - ✅ **Fix:** Try changing Start Command to: `cd /opt/render/project/src/backend && node dist/main.js`
+   - ✅ **Alternative:** Use `node dist/main.js` (without ./) as the start command directly in Render settings
 
 4. **After fixing, click "Manual Deploy" → "Deploy latest commit"**
 
