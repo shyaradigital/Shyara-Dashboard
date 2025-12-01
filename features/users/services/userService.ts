@@ -2,33 +2,14 @@ import type { User, UserFormData } from "../types/user"
 
 const STORAGE_KEY = "shyara_users_data"
 
-// Initialize data from storage, create master admin if users array is empty
+// Initialize data from storage, create master admin ONLY if storage key doesn't exist
 const getInitialData = (): User[] => {
   if (typeof window === "undefined") return []
 
   const stored = localStorage.getItem(STORAGE_KEY)
-  let users: User[] = []
 
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored)
-      // Validate that parsed data is an array
-      if (Array.isArray(parsed)) {
-        users = parsed
-      } else {
-        // If corrupted, remove it
-        localStorage.removeItem(STORAGE_KEY)
-        users = []
-      }
-    } catch (error) {
-      // If JSON is corrupted, remove it
-      localStorage.removeItem(STORAGE_KEY)
-      users = []
-    }
-  }
-
-  // If no users exist, create master admin account
-  if (users.length === 0) {
+  // If storage key doesn't exist at all, create master admin
+  if (!stored) {
     const masterAdmin: User = {
       id: `admin-${Date.now()}`,
       userId: "admin.shyara",
@@ -40,16 +21,80 @@ const getInitialData = (): User[] => {
       createdAt: new Date().toISOString(),
       lastLogin: null,
     }
-    users = [masterAdmin]
+    const users = [masterAdmin]
     saveData(users)
+    if (typeof window !== "undefined") {
+      console.log("[UserService] Created master admin - storage was empty")
+    }
+    return users
   }
 
-  return users
+  // Storage exists - try to parse it
+  try {
+    const parsed = JSON.parse(stored)
+
+    // Validate that parsed data is an array
+    if (!Array.isArray(parsed)) {
+      // Invalid format - but don't reset, try to recover
+      if (typeof window !== "undefined") {
+        console.error("[UserService] Invalid data format in storage, but preserving existing data")
+      }
+      // Return empty array but don't create master admin (storage exists, so users might have been deleted intentionally)
+      return []
+    }
+
+    // Filter out any invalid entries but keep valid ones
+    const validUsers = parsed.filter((user: any) => {
+      return (
+        user &&
+        typeof user === "object" &&
+        user.id &&
+        user.userId &&
+        user.email &&
+        user.name &&
+        user.password &&
+        user.role &&
+        user.status
+      )
+    })
+
+    if (typeof window !== "undefined") {
+      console.log(`[UserService] Loaded ${validUsers.length} users from storage`)
+    }
+
+    // Only create master admin if we have NO valid users AND storage was just created
+    // Since storage exists, we should preserve whatever is there (even if empty)
+    return validUsers
+  } catch (error) {
+    // JSON parse error - corrupted data
+    if (typeof window !== "undefined") {
+      console.error("[UserService] Failed to parse user data from storage:", error)
+    }
+    // Don't reset - return empty array but preserve the corrupted storage
+    // This prevents accidental data loss
+    return []
+  }
 }
 
 const saveData = (data: User[]): void => {
   if (typeof window === "undefined") return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+
+  try {
+    // Validate data before saving
+    if (!Array.isArray(data)) {
+      console.error("[UserService] Cannot save: data is not an array")
+      return
+    }
+
+    // Save to localStorage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+
+    if (typeof window !== "undefined") {
+      console.log(`[UserService] Saved ${data.length} users to storage`)
+    }
+  } catch (error) {
+    console.error("[UserService] Failed to save users to storage:", error)
+  }
 }
 
 export const userService = {
@@ -94,6 +139,10 @@ export const userService = {
   addUser: (userData: UserFormData): User => {
     const data = getInitialData()
 
+    if (typeof window !== "undefined") {
+      console.log(`[UserService] addUser called - current users count: ${data.length}`)
+    }
+
     // Validate userId format (letters, numbers, dots, dashes)
     const userIdRegex = /^[a-zA-Z0-9.-]+$/
     if (!userIdRegex.test(userData.userId.trim())) {
@@ -130,8 +179,15 @@ export const userService = {
       lastLogin: null,
     }
 
-    data.push(newUser)
-    saveData(data)
+    // Create new array with existing users + new user
+    const updatedData = [...data, newUser]
+    saveData(updatedData)
+
+    if (typeof window !== "undefined") {
+      console.log(`[UserService] User added successfully - new count: ${updatedData.length}`)
+      console.log(`[UserService] Added user: ${newUser.userId} (${newUser.email})`)
+    }
+
     return newUser
   },
 
@@ -178,10 +234,23 @@ export const userService = {
     const data = getInitialData()
     const index = data.findIndex((user) => user.id === id)
 
-    if (index === -1) return false
+    if (index === -1) {
+      if (typeof window !== "undefined") {
+        console.error(`[UserService] deleteUser: User with id ${id} not found`)
+      }
+      return false
+    }
 
-    data.splice(index, 1)
-    saveData(data)
+    // Create new array without the deleted user (immutable update)
+    const updatedData = data.filter((user) => user.id !== id)
+    saveData(updatedData)
+
+    if (typeof window !== "undefined") {
+      console.log(
+        `[UserService] User deleted: ${data[index].userId} - remaining users: ${updatedData.length}`
+      )
+    }
+
     return true
   },
 
