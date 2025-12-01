@@ -18,7 +18,6 @@ export enum IncomeCategory {
   BirthdayWishCard = "Birthday Wish Card",
   BirthdayVideoInvitation = "Birthday Video Invitation",
   BirthdayCardInvitation = "Birthday Card Invitation",
-  Mundi = "Mundi",
   Other = "Other",
 }
 

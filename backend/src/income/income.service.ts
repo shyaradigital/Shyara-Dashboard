@@ -144,7 +144,6 @@ export class IncomeService {
       "Birthday Wish Card": 0,
       "Birthday Video Invitation": 0,
       "Birthday Card Invitation": 0,
-      Mundi: 0,
       Other: 0,
     };
 

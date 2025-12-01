@@ -46,7 +46,6 @@ const INCOME_CATEGORIES: IncomeCategory[] = [
   "Birthday Wish Card",
   "Birthday Video Invitation",
   "Birthday Card Invitation",
-  "Mundi",
   "Other",
 ]
 

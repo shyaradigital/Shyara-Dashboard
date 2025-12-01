@@ -15,7 +15,6 @@ export type IncomeCategory =
   | "Birthday Wish Card"
   | "Birthday Video Invitation"
   | "Birthday Card Invitation"
-  | "Mundi"
   | "Other"
 
 export interface Income {
