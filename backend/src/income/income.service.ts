@@ -10,12 +10,33 @@ export class IncomeService {
   constructor(private prisma: PrismaService) {}
 
   async create(createIncomeDto: CreateIncomeDto, userId?: string) {
+    // Handle backward compatibility: if totalAmount is provided, use it; else use amount
+    const data: any = {
+      ...createIncomeDto,
+      date: new Date(createIncomeDto.date),
+      userId: userId || null,
+    };
+
+    // If totalAmount is provided, set advance/due amounts
+    // Otherwise, use existing amount field (backward compatible)
+    if (createIncomeDto.totalAmount !== undefined) {
+      data.totalAmount = createIncomeDto.totalAmount;
+      data.advanceAmount = createIncomeDto.advanceAmount ?? createIncomeDto.totalAmount;
+      data.dueAmount = createIncomeDto.dueAmount ?? 0;
+      data.isDuePaid = (data.dueAmount === 0 || data.dueAmount === null || data.dueAmount === undefined);
+      
+      if (createIncomeDto.dueDate) {
+        data.dueDate = new Date(createIncomeDto.dueDate);
+      }
+    } else {
+      // Backward compatible: set advanceAmount = amount, dueAmount = 0
+      data.advanceAmount = createIncomeDto.amount;
+      data.dueAmount = 0;
+      data.isDuePaid = true;
+    }
+
     const income = await this.prisma.income.create({
-      data: {
-        ...createIncomeDto,
-        date: new Date(createIncomeDto.date),
-        userId: userId || null,
-      },
+      data,
     });
 
     return income;
@@ -43,6 +64,12 @@ export class IncomeService {
       if (filters.endDate) {
         where.date.lte = new Date(filters.endDate);
       }
+    }
+
+    // Filter by entries with outstanding dues
+    if (filters?.hasDues === true) {
+      where.isDuePaid = false;
+      where.dueAmount = { gt: 0 };
     }
 
     const incomes = await this.prisma.income.findMany({
@@ -74,6 +101,12 @@ export class IncomeService {
     const updateData: any = { ...updateIncomeDto };
     if (updateIncomeDto.date) {
       updateData.date = new Date(updateIncomeDto.date);
+    }
+    if (updateIncomeDto.dueDate) {
+      updateData.dueDate = new Date(updateIncomeDto.dueDate);
+    }
+    if (updateIncomeDto.duePaidDate) {
+      updateData.duePaidDate = new Date(updateIncomeDto.duePaidDate);
     }
 
     const income = await this.prisma.income.update({
@@ -158,6 +191,60 @@ export class IncomeService {
       yearly,
       byCategory: byCategory as any,
     };
+  }
+
+  async markDueAsPaid(id: string, paidDate?: Date) {
+    const existing = await this.prisma.income.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Income with ID "${id}" not found`);
+    }
+
+    if (!existing.dueAmount || existing.dueAmount === 0) {
+      throw new NotFoundException(`Income with ID "${id}" has no outstanding dues`);
+    }
+
+    const income = await this.prisma.income.update({
+      where: { id },
+      data: {
+        isDuePaid: true,
+        duePaidDate: paidDate || new Date(),
+      },
+    });
+
+    return income;
+  }
+
+  async getOutstandingDues(filters?: IncomeFiltersDto) {
+    const where: any = {
+      isDuePaid: false,
+      dueAmount: { gt: 0 },
+    };
+
+    // Apply additional filters if provided
+    if (filters?.category) {
+      where.category = filters.category;
+    }
+
+    if (filters?.source) {
+      where.source = { contains: filters.source, mode: "insensitive" };
+    }
+
+    if (filters?.startDate || filters?.endDate) {
+      where.dueDate = {};
+      if (filters.startDate) {
+        where.dueDate.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        where.dueDate.lte = new Date(filters.endDate);
+      }
+    }
+
+    const dues = await this.prisma.income.findMany({
+      where,
+      orderBy: { dueDate: "asc" },
+    });
+
+    return dues;
   }
 }
 

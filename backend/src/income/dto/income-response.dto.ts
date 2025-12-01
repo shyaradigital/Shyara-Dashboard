@@ -25,5 +25,24 @@ export class IncomeResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  // Advance payment and dues fields
+  @ApiProperty({ required: false })
+  totalAmount?: number;
+
+  @ApiProperty({ required: false })
+  advanceAmount?: number;
+
+  @ApiProperty({ required: false })
+  dueAmount?: number;
+
+  @ApiProperty({ required: false })
+  dueDate?: Date;
+
+  @ApiProperty({ required: false })
+  isDuePaid?: boolean;
+
+  @ApiProperty({ required: false })
+  duePaidDate?: Date;
 }
 

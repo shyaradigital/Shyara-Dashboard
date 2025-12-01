@@ -12,6 +12,13 @@ const mapIncomeResponse = (response: IncomeResponse): Income => {
     date: response.date,
     createdAt: response.createdAt,
     updatedAt: response.updatedAt,
+    // Advance payment and dues fields
+    totalAmount: response.totalAmount,
+    advanceAmount: response.advanceAmount,
+    dueAmount: response.dueAmount,
+    dueDate: response.dueDate,
+    isDuePaid: response.isDuePaid,
+    duePaidDate: response.duePaidDate,
   }
 }
 
@@ -85,6 +92,27 @@ export const incomeService = {
       return await incomeApi.getSummary(filters)
     } catch (error) {
       console.error("Error fetching income summary:", error)
+      throw error
+    }
+  },
+
+  markDueAsPaid: async (id: string, paidDate?: string): Promise<Income> => {
+    try {
+      const updated = await incomeApi.markDueAsPaid(id, paidDate)
+      return mapIncomeResponse(updated)
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "Failed to mark due as paid"
+      throw new Error(errorMessage)
+    }
+  },
+
+  getOutstandingDues: async (filters?: IncomeFilters): Promise<Income[]> => {
+    try {
+      const dues = await incomeApi.getOutstandingDues(filters)
+      return dues.map(mapIncomeResponse)
+    } catch (error) {
+      console.error("Error fetching outstanding dues:", error)
       throw error
     }
   },

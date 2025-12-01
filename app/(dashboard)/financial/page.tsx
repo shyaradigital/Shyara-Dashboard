@@ -26,6 +26,7 @@ export default function FinancialPage() {
     updateIncome,
     deleteIncome,
     updateFilters: updateIncomeFilters,
+    markDueAsPaid,
   } = useIncome()
 
   const {
@@ -297,6 +298,7 @@ export default function FinancialPage() {
             onUpdate={updateIncome}
             onDelete={deleteIncome}
             onFilterChange={updateIncomeFilters}
+            onMarkDuePaid={markDueAsPaid}
           />
         </section>
       )}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DollarSign,
@@ -19,6 +19,8 @@ import { useExpenses } from "@/features/financial/hooks/useExpenses"
 import { RevenueCharts } from "@/features/financial/components/RevenueCharts"
 import { BalanceSheetView } from "@/features/financial/components/BalanceSheetView"
 import { CategoryBreakdown } from "@/features/financial/components/CategoryBreakdown"
+import { DuesSection } from "@/features/financial/components/DuesSection"
+import { incomeService } from "@/features/financial/services/incomeService"
 import {
   Table,
   TableBody,
@@ -47,15 +49,31 @@ export default function DashboardPage() {
     refresh: refreshSummary,
   } = useFinancialSummary()
 
-  const { incomes, summary: incomeSummary, isLoading: incomeLoading } = useIncome()
+  const { incomes, summary: incomeSummary, isLoading: incomeLoading, markDueAsPaid } = useIncome()
 
   const { expenses, summary: expenseSummary, isLoading: expenseLoading } = useExpenses()
+  
+  const [outstandingDues, setOutstandingDues] = useState<number>(0)
 
   // Refresh summary when income or expenses change
   useEffect(() => {
     refreshSummary()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomes.length, expenses.length])
+
+  // Load outstanding dues total
+  useEffect(() => {
+    const loadDues = async () => {
+      try {
+        const dues = await incomeService.getOutstandingDues()
+        const total = dues.reduce((sum, due) => sum + (due.dueAmount || 0), 0)
+        setOutstandingDues(total)
+      } catch (error) {
+        console.error("Error loading outstanding dues:", error)
+      }
+    }
+    loadDues()
+  }, [incomes])
 
   const formatCurrency = (amount: number) => {
     if (isNaN(amount) || !isFinite(amount)) return "₹0.00"
@@ -494,6 +512,15 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      {/* Outstanding Dues Section */}
+      <section className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold tracking-tight">Outstanding Dues</h2>
+          <p className="text-sm text-muted-foreground">Track and manage pending payments from clients</p>
+        </div>
+        <DuesSection onMarkDuePaid={markDueAsPaid} />
       </section>
 
       {/* Financial Projections Section */}

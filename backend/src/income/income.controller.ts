@@ -85,5 +85,23 @@ export class IncomeController {
   remove(@Param("id") id: string) {
     return this.incomeService.remove(id);
   }
+
+  @Patch(":id/mark-due-paid")
+  @Permissions("finances:edit")
+  @ApiOperation({ summary: "Mark due as paid for an income entry" })
+  @ApiResponse({ status: 200, description: "Due marked as paid", type: IncomeResponseDto })
+  @ApiResponse({ status: 404, description: "Income not found or has no outstanding dues" })
+  markDueAsPaid(@Param("id") id: string, @Body() body?: { paidDate?: string }) {
+    const paidDate = body?.paidDate ? new Date(body.paidDate) : undefined;
+    return this.incomeService.markDueAsPaid(id, paidDate);
+  }
+
+  @Get("dues/outstanding")
+  @Permissions("finances:view")
+  @ApiOperation({ summary: "Get all outstanding dues" })
+  @ApiResponse({ status: 200, description: "List of outstanding dues", type: [IncomeResponseDto] })
+  getOutstandingDues(@Query() filters: IncomeFiltersDto) {
+    return this.incomeService.getOutstandingDues(filters);
+  }
 }
 

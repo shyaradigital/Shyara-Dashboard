@@ -50,6 +50,14 @@ model Income {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Advance payment and dues fields
+  totalAmount   Float?   // Total project/transaction amount
+  advanceAmount Float?   @default(0) // Amount paid as advance
+  dueAmount     Float?   @default(0) // Remaining amount due
+  dueDate       DateTime? // Expected payment date for dues
+  isDuePaid     Boolean  @default(false) // Whether the due has been paid
+  duePaidDate   DateTime? // Date when due was paid
+
   // Relations
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)

@@ -16,6 +16,13 @@ export interface IncomeResponse {
   date: string;
   createdAt: string;
   updatedAt: string;
+  // Advance payment and dues fields
+  totalAmount?: number;
+  advanceAmount?: number;
+  dueAmount?: number;
+  dueDate?: string;
+  isDuePaid?: boolean;
+  duePaidDate?: string;
 }
 
 export interface ExpenseResponse {
@@ -36,6 +43,7 @@ export const incomeApi = {
     if (filters?.source) params.append("source", filters.source);
     if (filters?.startDate) params.append("startDate", filters.startDate);
     if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.hasDues !== undefined) params.append("hasDues", filters.hasDues.toString());
 
     const response = await apiClient.get<IncomeResponse[]>(
       `/incomes${params.toString() ? `?${params.toString()}` : ""}`
@@ -74,6 +82,26 @@ export const incomeApi = {
 
     const response = await apiClient.get<IncomeSummary>(
       `/incomes/summary${params.toString() ? `?${params.toString()}` : ""}`
+    );
+    return response.data;
+  },
+
+  markDueAsPaid: async (id: string, paidDate?: string): Promise<IncomeResponse> => {
+    const response = await apiClient.patch<IncomeResponse>(`/incomes/${id}/mark-due-paid`, {
+      paidDate,
+    });
+    return response.data;
+  },
+
+  getOutstandingDues: async (filters?: IncomeFilters): Promise<IncomeResponse[]> => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append("category", filters.category);
+    if (filters?.source) params.append("source", filters.source);
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+
+    const response = await apiClient.get<IncomeResponse[]>(
+      `/incomes/dues/outstanding${params.toString() ? `?${params.toString()}` : ""}`
     );
     return response.data;
   },

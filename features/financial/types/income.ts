@@ -26,6 +26,13 @@ export interface Income {
   date: string // ISO date string
   createdAt: string
   updatedAt: string
+  // Advance payment and dues fields
+  totalAmount?: number
+  advanceAmount?: number
+  dueAmount?: number
+  dueDate?: string
+  isDuePaid?: boolean
+  duePaidDate?: string
 }
 
 export interface IncomeFilters {
@@ -33,6 +40,12 @@ export interface IncomeFilters {
   source?: string
   startDate?: string
   endDate?: string
+  hasDues?: boolean
+}
+
+export interface OutstandingDue extends Income {
+  daysOverdue?: number
+  isOverdue?: boolean
 }
 
 export interface IncomeSummary {

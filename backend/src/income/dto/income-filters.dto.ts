@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsDateString, IsEnum } from "class-validator";
+import { IsOptional, IsString, IsDateString, IsEnum, IsBoolean } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { IncomeCategory } from "./create-income.dto";
 
@@ -22,5 +22,10 @@ export class IncomeFiltersDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @ApiProperty({ required: false, description: "Filter by entries that have outstanding dues" })
+  @IsOptional()
+  @IsBoolean()
+  hasDues?: boolean;
 }
 

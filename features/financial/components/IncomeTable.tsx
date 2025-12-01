@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Plus } from "lucide-react"
+import { Pencil, Trash2, Plus, CheckCircle2 } from "lucide-react"
 import type { Income, IncomeCategory } from "../types/income"
 import { AddIncomeModal } from "./AddIncomeModal"
 
@@ -30,6 +30,7 @@ interface IncomeTableProps {
   onUpdate: (id: string, updates: Partial<Omit<Income, "id" | "createdAt">>) => void
   onDelete: (id: string) => void
   onFilterChange: (filters: { category?: IncomeCategory }) => void
+  onMarkDuePaid?: (id: string) => Promise<void>
 }
 
 const INCOME_CATEGORIES: IncomeCategory[] = [
@@ -59,6 +60,7 @@ export function IncomeTable({
   onUpdate,
   onDelete,
   onFilterChange,
+  onMarkDuePaid,
 }: IncomeTableProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingIncome, setEditingIncome] = useState<Income | null>(null)
@@ -105,6 +107,39 @@ export function IncomeTable({
     })
   }
 
+  const getDueStatus = (income: Income) => {
+    if (!income.dueAmount || income.dueAmount === 0) {
+      return null
+    }
+    
+    if (income.isDuePaid) {
+      return { label: "Paid", variant: "default" as const, color: "bg-green-100 text-green-800" }
+    }
+    
+    if (income.dueDate) {
+      const dueDate = new Date(income.dueDate)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      dueDate.setHours(0, 0, 0, 0)
+      
+      if (dueDate < today) {
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+        return { 
+          label: `${daysOverdue} days overdue`, 
+          variant: "destructive" as const,
+          color: "bg-red-100 text-red-800"
+        }
+      } else if (dueDate.getTime() === today.getTime()) {
+        return { label: "Due today", variant: "secondary" as const, color: "bg-yellow-100 text-yellow-800" }
+      } else {
+        const daysUntil = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        return { label: `Due in ${daysUntil} days`, variant: "secondary" as const, color: "bg-blue-100 text-blue-800" }
+      }
+    }
+    
+    return { label: "Unpaid", variant: "secondary" as const, color: "bg-gray-100 text-gray-800" }
+  }
+
   return (
     <div className="space-y-3">
       <div className="mb-2 mt-4 flex w-full flex-col gap-3 md:mt-6">
@@ -140,6 +175,7 @@ export function IncomeTable({
                 <TableHead className="font-semibold">Source</TableHead>
                 <TableHead className="font-semibold">Category</TableHead>
                 <TableHead className="font-semibold">Amount</TableHead>
+                <TableHead className="font-semibold">Dues Status</TableHead>
                 <TableHead className="font-semibold">Description</TableHead>
                 <TableHead className="w-[100px] text-right font-semibold sm:w-auto">Actions</TableHead>
               </TableRow>
@@ -147,13 +183,13 @@ export function IncomeTable({
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : incomes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     No income entries found. Add your first income entry to get started.
                   </TableCell>
                 </TableRow>
@@ -174,12 +210,56 @@ export function IncomeTable({
                     </TableCell>
                     <TableCell className="py-2.5 font-semibold text-green-600">
                       {formatCurrency(income.amount)}
+                      {income.totalAmount && income.totalAmount !== income.amount && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          / {formatCurrency(income.totalAmount)}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-2.5">
+                      {(() => {
+                        const dueStatus = getDueStatus(income)
+                        if (!dueStatus) {
+                          return <span className="text-xs text-muted-foreground">-</span>
+                        }
+                        return (
+                          <div className="flex flex-col gap-1">
+                            <Badge variant={dueStatus.variant} className={`text-xs ${dueStatus.color}`}>
+                              {dueStatus.label}
+                            </Badge>
+                            {income.dueAmount && income.dueAmount > 0 && (
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {formatCurrency(income.dueAmount)} due
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate py-2.5 text-sm text-muted-foreground sm:max-w-none">
                       {income.description || "-"}
                     </TableCell>
                     <TableCell className="py-2.5 text-right">
                       <div className="flex justify-end gap-2 sm:gap-3">
+                        {onMarkDuePaid && 
+                         income.dueAmount && 
+                         income.dueAmount > 0 && 
+                         !income.isDuePaid && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async () => {
+                              if (confirm("Mark this due as paid?")) {
+                                await onMarkDuePaid(income.id)
+                              }
+                            }}
+                            className="h-8 w-8 sm:h-9 sm:w-9 text-green-600 hover:bg-green-50"
+                            aria-label="Mark due as paid"
+                            title="Mark due as paid"
+                          >
+                            <CheckCircle2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"

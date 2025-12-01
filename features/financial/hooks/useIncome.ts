@@ -94,6 +94,23 @@ export function useIncome() {
     setFilters(newFilters)
   }, [])
 
+  const markDueAsPaid = useCallback(
+    async (id: string) => {
+      try {
+        await incomeService.markDueAsPaid(id)
+        await loadIncomes()
+        toast.success("Due marked as paid successfully")
+        return true
+      } catch (error: any) {
+        console.error("Error marking due as paid:", error)
+        const errorMessage = error?.message || "Failed to mark due as paid"
+        toast.error(errorMessage)
+        return false
+      }
+    },
+    [loadIncomes]
+  )
+
   return {
     incomes,
     summary,
@@ -103,6 +120,7 @@ export function useIncome() {
     updateIncome,
     deleteIncome,
     updateFilters,
+    markDueAsPaid,
     refresh: loadIncomes,
   }
 }

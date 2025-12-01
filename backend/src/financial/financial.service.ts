@@ -223,8 +223,41 @@ export class FinancialService {
         ? last3MonthsRevenue.reduce((sum, r) => sum + r, 0) / last3MonthsRevenue.length
         : 0;
 
-    const nextQuarterProjection = averageMonthlyNetRevenue * 3;
-    const nextYearProjection = averageMonthlyNetRevenue * 12;
+    // Get outstanding dues and include them in projections based on due dates
+    const outstandingDues = await this.incomeService.getOutstandingDues();
+    
+    // Calculate next quarter date range (3 months from now)
+    const nextQuarterStart = new Date(now);
+    nextQuarterStart.setMonth(currentMonth + 1, 1);
+    const nextQuarterEnd = new Date(nextQuarterStart);
+    nextQuarterEnd.setMonth(nextQuarterStart.getMonth() + 3);
+    
+    // Calculate next year date range (12 months from now)
+    const nextYearStart = new Date(now);
+    nextYearStart.setMonth(currentMonth + 1, 1);
+    const nextYearEnd = new Date(nextYearStart);
+    nextYearEnd.setFullYear(nextYearStart.getFullYear() + 1);
+    
+    // Filter dues by due date within projection periods
+    const duesInNextQuarter = outstandingDues.filter((due) => {
+      if (!due.dueDate) return false;
+      const dueDate = new Date(due.dueDate);
+      return dueDate >= nextQuarterStart && dueDate < nextQuarterEnd;
+    });
+    
+    const duesInNextYear = outstandingDues.filter((due) => {
+      if (!due.dueDate) return false;
+      const dueDate = new Date(due.dueDate);
+      return dueDate >= nextYearStart && dueDate < nextYearEnd;
+    });
+    
+    // Sum up dues amounts
+    const duesAmountNextQuarter = duesInNextQuarter.reduce((sum, due) => sum + (due.dueAmount || 0), 0);
+    const duesAmountNextYear = duesInNextYear.reduce((sum, due) => sum + (due.dueAmount || 0), 0);
+    
+    // Add dues to projections
+    const nextQuarterProjection = averageMonthlyNetRevenue * 3 + duesAmountNextQuarter;
+    const nextYearProjection = averageMonthlyNetRevenue * 12 + duesAmountNextYear;
 
     return {
       monthly,
