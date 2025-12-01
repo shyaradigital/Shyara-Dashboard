@@ -196,7 +196,9 @@ export function AddUserModal({ open, onOpenChange, onSave }: AddUserModalProps) 
                 value={userId}
                 onChange={(e) => {
                   setUserId(e.target.value)
-                  setError("")
+                  if (errors.userId) {
+                    setErrors({ ...errors, userId: "" })
+                  }
                 }}
                 className={errors.userId ? "border-destructive" : ""}
                 required
