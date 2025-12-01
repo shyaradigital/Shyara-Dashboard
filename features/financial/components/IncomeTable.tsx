@@ -141,7 +141,7 @@ export function IncomeTable({
                 <TableHead className="font-semibold">Category</TableHead>
                 <TableHead className="font-semibold">Amount</TableHead>
                 <TableHead className="font-semibold">Description</TableHead>
-                <TableHead className="text-right font-semibold">Actions</TableHead>
+                <TableHead className="w-[100px] text-right font-semibold sm:w-auto">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -179,14 +179,15 @@ export function IncomeTable({
                       {income.description || "-"}
                     </TableCell>
                     <TableCell className="py-2.5 text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-2 sm:gap-3">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(income)}
-                          className="h-7 w-7"
+                          className="h-8 w-8 sm:h-9 sm:w-9"
+                          aria-label="Edit income"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
+                          <Pencil className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -196,9 +197,10 @@ export function IncomeTable({
                               onDelete(income.id)
                             }
                           }}
-                          className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          className="h-8 w-8 sm:h-9 sm:w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="Delete income"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
