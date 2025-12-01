@@ -137,6 +137,13 @@ If you see "Failed deploy" status:
    - ✅ **Fix:** Add `JWT_SECRET` environment variable
    - ✅ **Fix:** Generate with: `openssl rand -base64 32`
 
+   **Issue: "Cannot find module '/opt/render/project/src/backend/dist/main.js'"**
+   - ✅ **Fix:** This usually means the build output wasn't preserved
+   - ✅ **Fix:** Verify Root Directory is set to `backend`
+   - ✅ **Fix:** Check if dist folder exists by using Shell: `ls -la dist/`
+   - ✅ **Fix:** Try using absolute path in start command: `node ./dist/main.js`
+   - ✅ **Fix:** Or verify build actually created the file by checking build logs for "Uploading build" message
+
 4. **After fixing, click "Manual Deploy" → "Deploy latest commit"**
 
 ### CORS Issues:
