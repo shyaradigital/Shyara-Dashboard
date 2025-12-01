@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { financialService } from "../services/financialService"
 import type { FinancialSummary, RevenueAnalytics, BalanceSheet } from "../types/summary"
+import { toast } from "@/lib/utils/toast"
 
 export function useFinancialSummary() {
   const [summary, setSummary] = useState<FinancialSummary | null>(null)
@@ -10,17 +11,21 @@ export function useFinancialSummary() {
   const [balanceSheet, setBalanceSheet] = useState<BalanceSheet | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const loadSummary = useCallback(() => {
+  const loadSummary = useCallback(async () => {
     setIsLoading(true)
     try {
-      const summaryData = financialService.getSummary()
-      const analyticsData = financialService.getRevenueAnalytics()
-      const balanceSheetData = financialService.getBalanceSheet()
+      const [summaryData, analyticsData, balanceSheetData] = await Promise.all([
+        financialService.getSummary(),
+        financialService.getRevenueAnalytics(),
+        financialService.getBalanceSheet(),
+      ])
       setSummary(summaryData)
       setAnalytics(analyticsData)
       setBalanceSheet(balanceSheetData)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading financial summary:", error)
+      const errorMessage = error?.message || "Failed to load financial data"
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

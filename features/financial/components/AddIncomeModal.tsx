@@ -25,7 +25,7 @@ import type { Income, IncomeCategory } from "../types/income"
 interface AddIncomeModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (income: Omit<Income, "id" | "createdAt" | "updatedAt">) => void
+  onSave: (income: Omit<Income, "id" | "createdAt" | "updatedAt">) => void | Promise<boolean>
   editingIncome?: Income | null
 }
 
@@ -83,7 +83,7 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
     setDate(getTodayDateIST())
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!amount || !source || !date) {
@@ -95,7 +95,7 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
       return
     }
 
-    onSave({
+    const result = await onSave({
       amount: amountValue,
       category,
       source: source.trim(),
@@ -103,8 +103,12 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
       date: new Date(date).toISOString(),
     })
 
-    resetForm()
-    onOpenChange(false)
+    // Only close modal if save was successful (returns true) or if onSave doesn't return a value
+    if (result === true || result === undefined) {
+      resetForm()
+      onOpenChange(false)
+    }
+    // Error is handled by the hook with toast notification
   }
 
   return (

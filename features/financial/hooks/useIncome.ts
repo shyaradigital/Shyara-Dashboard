@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { incomeService } from "../services/incomeService"
 import type { Income, IncomeFilters, IncomeSummary } from "../types/income"
+import { toast } from "@/lib/utils/toast"
 
 export function useIncome() {
   const [incomes, setIncomes] = useState<Income[]>([])
@@ -10,15 +11,19 @@ export function useIncome() {
   const [filters, setFilters] = useState<IncomeFilters>({})
   const [isLoading, setIsLoading] = useState(true)
 
-  const loadIncomes = useCallback(() => {
+  const loadIncomes = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = incomeService.getAll(filters)
-      const summaryData = incomeService.getSummary(filters)
+      const [data, summaryData] = await Promise.all([
+        incomeService.getAll(filters),
+        incomeService.getSummary(filters),
+      ])
       setIncomes(data)
       setSummary(summaryData)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading incomes:", error)
+      const errorMessage = error?.message || "Failed to load income data"
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -29,13 +34,16 @@ export function useIncome() {
   }, [loadIncomes])
 
   const addIncome = useCallback(
-    (income: Omit<Income, "id" | "createdAt" | "updatedAt">) => {
+    async (income: Omit<Income, "id" | "createdAt" | "updatedAt">) => {
       try {
-        incomeService.create(income)
-        loadIncomes()
+        await incomeService.create(income)
+        await loadIncomes()
+        toast.success("Income added successfully")
         return true
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error adding income:", error)
+        const errorMessage = error?.message || "Failed to add income"
+        toast.error(errorMessage)
         return false
       }
     },
@@ -43,16 +51,19 @@ export function useIncome() {
   )
 
   const updateIncome = useCallback(
-    (id: string, updates: Partial<Omit<Income, "id" | "createdAt">>) => {
+    async (id: string, updates: Partial<Omit<Income, "id" | "createdAt">>) => {
       try {
-        const updated = incomeService.update(id, updates)
+        const updated = await incomeService.update(id, updates)
         if (updated) {
-          loadIncomes()
+          await loadIncomes()
+          toast.success("Income updated successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error updating income:", error)
+        const errorMessage = error?.message || "Failed to update income"
+        toast.error(errorMessage)
         return false
       }
     },
@@ -60,16 +71,19 @@ export function useIncome() {
   )
 
   const deleteIncome = useCallback(
-    (id: string) => {
+    async (id: string) => {
       try {
-        const success = incomeService.delete(id)
+        const success = await incomeService.delete(id)
         if (success) {
-          loadIncomes()
+          await loadIncomes()
+          toast.success("Income deleted successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting income:", error)
+        const errorMessage = error?.message || "Failed to delete income"
+        toast.error(errorMessage)
         return false
       }
     },

@@ -39,7 +39,7 @@ interface EditUserModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   user: User | null
-  onSave: (id: string, updates: Partial<Omit<User, "id" | "createdAt">>) => void
+  onSave: (id: string, updates: Partial<Omit<User, "id" | "createdAt">>) => void | Promise<void>
 }
 
 export function EditUserModal({ open, onOpenChange, user, onSave }: EditUserModalProps) {
@@ -99,22 +99,26 @@ export function EditUserModal({ open, onOpenChange, user, onSave }: EditUserModa
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!user || !validateForm()) {
       return
     }
 
-    onSave(user.id, {
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim() || undefined,
-      role,
-      status,
-    })
-
-    onOpenChange(false)
+    try {
+      await onSave(user.id, {
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        role,
+        status,
+      })
+      onOpenChange(false)
+    } catch (error) {
+      // Error is handled by the hook with toast notification
+      // Keep modal open so user can fix errors
+    }
   }
 
   const handleResetPassword = () => {

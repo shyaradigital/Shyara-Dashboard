@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  userId    String   @unique // e.g., "admin.shyara"
+  email     String   @unique
+  name      String
+  phone     String?
+  password  String   // Hashed password
+  role      String   @default("MANAGER") // ADMIN, MANAGER, or custom role name
+  status    String   @default("active") // active, disabled
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLogin DateTime?
+
+  // Relations
+  incomes   Income[]
+  expenses  Expense[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  permissions String[] // Array of permission strings
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Income {
+  id          String   @id @default(cuid())
+  amount      Float
+  category    String   // SMM, Website, Ads, POS, Consultation, Freelancing, Other
+  source      String
+  description String?
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("incomes")
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  amount      Float
+  category    String   // Salaries, Subscriptions, Rent, Software, Hardware, Travel, Utilities, Misc
+  purpose     String
+  description String?
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("expenses")
+}
+

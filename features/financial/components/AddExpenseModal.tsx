@@ -25,7 +25,7 @@ import type { Expense, ExpenseCategory } from "../types/expense"
 interface AddExpenseModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">) => void
+  onSave: (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">) => void | Promise<boolean>
   editingExpense?: Expense | null
 }
 
@@ -89,7 +89,7 @@ export function AddExpenseModal({
     setDate(getTodayDateIST())
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!amount || !purpose || !date) {
@@ -101,7 +101,7 @@ export function AddExpenseModal({
       return
     }
 
-    onSave({
+    const result = await onSave({
       amount: amountValue,
       category,
       purpose: purpose.trim(),
@@ -109,8 +109,12 @@ export function AddExpenseModal({
       date: new Date(date).toISOString(),
     })
 
-    resetForm()
-    onOpenChange(false)
+    // Only close modal if save was successful (returns true) or if onSave doesn't return a value
+    if (result === true || result === undefined) {
+      resetForm()
+      onOpenChange(false)
+    }
+    // Error is handled by the hook with toast notification
   }
 
   return (

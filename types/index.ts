@@ -7,6 +7,7 @@ export interface User {
   email: string
   role: Role
   avatar?: string
+  permissions?: string[] // Backend permissions array
 }
 
 export interface AuthState {

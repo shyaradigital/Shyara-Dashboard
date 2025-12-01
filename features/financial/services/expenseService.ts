@@ -1,162 +1,91 @@
-import type { Expense, ExpenseFilters, ExpenseSummary, ExpenseCategory } from "../types/expense"
+import type { Expense, ExpenseFilters, ExpenseSummary } from "../types/expense"
+import { expenseApi, type ExpenseResponse } from "@/lib/api/financial"
 
-const STORAGE_KEY = "shyara_expense_data"
-
-// Initialize data from storage, return empty array if storage is empty
-const getInitialData = (): Expense[] => {
-  if (typeof window === "undefined") return []
-
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored)
-      // Validate that parsed data is an array
-      if (Array.isArray(parsed)) {
-        return parsed
-      }
-      // If corrupted, reset to empty array
-      localStorage.removeItem(STORAGE_KEY)
-      return []
-    } catch (error) {
-      // If JSON is corrupted, remove it and return empty array
-      localStorage.removeItem(STORAGE_KEY)
-      return []
-    }
+// Convert API response to app Expense type
+const mapExpenseResponse = (response: ExpenseResponse): Expense => {
+  return {
+    id: response.id,
+    amount: response.amount,
+    category: response.category as Expense["category"],
+    purpose: response.purpose,
+    description: response.description,
+    date: response.date,
+    createdAt: response.createdAt,
+    updatedAt: response.updatedAt,
   }
-
-  // Return empty array if storage is empty
-  return []
-}
-
-const saveData = (data: Expense[]): void => {
-  if (typeof window === "undefined") return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
 export const expenseService = {
-  getAll: (filters?: ExpenseFilters): Expense[] => {
-    const data = getInitialData()
+  getAll: async (filters?: ExpenseFilters): Promise<Expense[]> => {
+    try {
+      const expenses = await expenseApi.getAll(filters)
+      return expenses.map(mapExpenseResponse)
+    } catch (error) {
+      console.error("Error fetching expenses:", error)
+      throw error
+    }
+  },
 
-    if (!filters) return data
+  getById: async (id: string): Promise<Expense | null> => {
+    try {
+      const expense = await expenseApi.getById(id)
+      return mapExpenseResponse(expense)
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null
+      }
+      console.error("Error fetching expense:", error)
+      throw error
+    }
+  },
 
-    return data.filter((expense) => {
-      if (filters.category && expense.category !== filters.category) return false
-      if (filters.purpose && !expense.purpose.toLowerCase().includes(filters.purpose.toLowerCase()))
-        return false
-      if (filters.startDate && expense.date < filters.startDate) return false
-      if (filters.endDate && expense.date > filters.endDate) return false
+  create: async (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">): Promise<Expense> => {
+    try {
+      const created = await expenseApi.create(expense)
+      return mapExpenseResponse(created)
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "Failed to create expense"
+      throw new Error(errorMessage)
+    }
+  },
+
+  update: async (
+    id: string,
+    updates: Partial<Omit<Expense, "id" | "createdAt">>
+  ): Promise<Expense | null> => {
+    try {
+      const updated = await expenseApi.update(id, updates)
+      return mapExpenseResponse(updated)
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null
+      }
+      const errorMessage =
+        error.response?.data?.message || error.message || "Failed to update expense"
+      throw new Error(errorMessage)
+    }
+  },
+
+  delete: async (id: string): Promise<boolean> => {
+    try {
+      await expenseApi.delete(id)
       return true
-    })
-  },
-
-  getById: (id: string): Expense | null => {
-    const data = getInitialData()
-    return data.find((expense) => expense.id === id) || null
-  },
-
-  create: (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">): Expense => {
-    const data = getInitialData()
-    // Generate unique ID using timestamp + random to avoid collisions
-    const newExpense: Expense = {
-      ...expense,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return false
+      }
+      console.error("Error deleting expense:", error)
+      throw error
     }
-    data.push(newExpense)
-    saveData(data)
-    return newExpense
   },
 
-  update: (id: string, updates: Partial<Omit<Expense, "id" | "createdAt">>): Expense | null => {
-    const data = getInitialData()
-    const index = data.findIndex((expense) => expense.id === id)
-
-    if (index === -1) return null
-
-    data[index] = {
-      ...data[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    }
-    saveData(data)
-    return data[index]
-  },
-
-  delete: (id: string): boolean => {
-    const data = getInitialData()
-    const index = data.findIndex((expense) => expense.id === id)
-
-    if (index === -1) return false
-
-    data.splice(index, 1)
-    saveData(data)
-    return true
-  },
-
-  getSummary: (filters?: ExpenseFilters): ExpenseSummary => {
-    const data = expenseService.getAll(filters)
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    const currentQuarter = Math.floor(currentMonth / 3)
-
-    const monthly = data
-      .filter((expense) => {
-        const date = new Date(expense.date)
-        // Validate date is valid
-        if (isNaN(date.getTime())) return false
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear
-      })
-      .reduce((sum, expense) => sum + (isNaN(expense.amount) ? 0 : expense.amount), 0)
-
-    const quarterly = data
-      .filter((expense) => {
-        const date = new Date(expense.date)
-        // Validate date is valid
-        if (isNaN(date.getTime())) return false
-        return (
-          Math.floor(date.getMonth() / 3) === currentQuarter && date.getFullYear() === currentYear
-        )
-      })
-      .reduce((sum, expense) => sum + (isNaN(expense.amount) ? 0 : expense.amount), 0)
-
-    const yearly = data
-      .filter((expense) => {
-        const date = new Date(expense.date)
-        // Validate date is valid
-        if (isNaN(date.getTime())) return false
-        return date.getFullYear() === currentYear
-      })
-      .reduce((sum, expense) => sum + (isNaN(expense.amount) ? 0 : expense.amount), 0)
-
-    const total = data.reduce(
-      (sum, expense) => sum + (isNaN(expense.amount) ? 0 : expense.amount),
-      0
-    )
-
-    const byCategory: Record<ExpenseCategory, number> = {
-      Salaries: 0,
-      Subscriptions: 0,
-      Rent: 0,
-      Software: 0,
-      Hardware: 0,
-      Travel: 0,
-      Utilities: 0,
-      Misc: 0,
-    }
-
-    data.forEach((expense) => {
-      const amount = isNaN(expense.amount) ? 0 : expense.amount
-      byCategory[expense.category] = (byCategory[expense.category] || 0) + amount
-    })
-
-    return {
-      total,
-      monthly,
-      quarterly,
-      yearly,
-      byCategory,
+  getSummary: async (filters?: ExpenseFilters): Promise<ExpenseSummary> => {
+    try {
+      return await expenseApi.getSummary(filters)
+    } catch (error) {
+      console.error("Error fetching expense summary:", error)
+      throw error
     }
   },
 }

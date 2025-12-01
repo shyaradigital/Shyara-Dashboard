@@ -230,7 +230,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                 <DropdownMenuItem
                   onClick={() => {
                     logout()
-                    router.push("/login")
                   }}
                 >
                   <LogOut className="mr-2 h-4 w-4" />

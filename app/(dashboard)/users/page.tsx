@@ -55,13 +55,13 @@ export default function UsersPage() {
   // Get filtered users
   const filteredUsers = useFilteredUsers(users, filters)
 
-  const handleAddUser = (userData: Parameters<typeof addUser>[0]) => {
+  const handleAddUser = async (userData: Parameters<typeof addUser>[0]) => {
     try {
-      addUser(userData)
+      await addUser(userData)
       setAddUserModalOpen(false)
     } catch (error: any) {
-      // Error handling is done in the modal
-      console.error("Error adding user:", error)
+      // Error is handled by the hook with toast notification
+      // Keep modal open so user can fix errors
     }
   }
 
@@ -70,14 +70,17 @@ export default function UsersPage() {
     setEditUserModalOpen(true)
   }
 
-  const handleUpdateUser = (id: string, updates: Partial<Omit<User, "id" | "createdAt">>) => {
+  const handleUpdateUser = async (
+    id: string,
+    updates: Partial<Omit<User, "id" | "createdAt">>
+  ) => {
     try {
-      updateUser(id, updates)
+      await updateUser(id, updates)
       setEditUserModalOpen(false)
       setEditingUser(null)
     } catch (error: any) {
-      // Error handling is done in the modal
-      console.error("Error updating user:", error)
+      // Error is handled by the hook with toast notification
+      // Keep modal open so user can fix errors
     }
   }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { expenseService } from "../services/expenseService"
 import type { Expense, ExpenseFilters, ExpenseSummary } from "../types/expense"
+import { toast } from "@/lib/utils/toast"
 
 export function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -10,15 +11,19 @@ export function useExpenses() {
   const [filters, setFilters] = useState<ExpenseFilters>({})
   const [isLoading, setIsLoading] = useState(true)
 
-  const loadExpenses = useCallback(() => {
+  const loadExpenses = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = expenseService.getAll(filters)
-      const summaryData = expenseService.getSummary(filters)
+      const [data, summaryData] = await Promise.all([
+        expenseService.getAll(filters),
+        expenseService.getSummary(filters),
+      ])
       setExpenses(data)
       setSummary(summaryData)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading expenses:", error)
+      const errorMessage = error?.message || "Failed to load expense data"
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -29,13 +34,16 @@ export function useExpenses() {
   }, [loadExpenses])
 
   const addExpense = useCallback(
-    (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">) => {
+    async (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">) => {
       try {
-        expenseService.create(expense)
-        loadExpenses()
+        await expenseService.create(expense)
+        await loadExpenses()
+        toast.success("Expense added successfully")
         return true
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error adding expense:", error)
+        const errorMessage = error?.message || "Failed to add expense"
+        toast.error(errorMessage)
         return false
       }
     },
@@ -43,16 +51,19 @@ export function useExpenses() {
   )
 
   const updateExpense = useCallback(
-    (id: string, updates: Partial<Omit<Expense, "id" | "createdAt">>) => {
+    async (id: string, updates: Partial<Omit<Expense, "id" | "createdAt">>) => {
       try {
-        const updated = expenseService.update(id, updates)
+        const updated = await expenseService.update(id, updates)
         if (updated) {
-          loadExpenses()
+          await loadExpenses()
+          toast.success("Expense updated successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error updating expense:", error)
+        const errorMessage = error?.message || "Failed to update expense"
+        toast.error(errorMessage)
         return false
       }
     },
@@ -60,16 +71,19 @@ export function useExpenses() {
   )
 
   const deleteExpense = useCallback(
-    (id: string) => {
+    async (id: string) => {
       try {
-        const success = expenseService.delete(id)
+        const success = await expenseService.delete(id)
         if (success) {
-          loadExpenses()
+          await loadExpenses()
+          toast.success("Expense deleted successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting expense:", error)
+        const errorMessage = error?.message || "Failed to delete expense"
+        toast.error(errorMessage)
         return false
       }
     },

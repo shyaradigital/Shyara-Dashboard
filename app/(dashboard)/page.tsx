@@ -214,7 +214,7 @@ export default function DashboardPage() {
     return insightsList.slice(0, 4) // Limit to 4 insights
   }, [financialSummary, analytics, recentActivity])
 
-  // Calculate projections
+  // Calculate projections using backend data
   const projections = useMemo(() => {
     if (!analytics || !financialSummary) {
       return {
@@ -231,6 +231,11 @@ export default function DashboardPage() {
       }
     }
 
+    // Use backend projections for net revenue
+    const nextQuarterProjection = analytics.nextQuarterProjection || 0
+    const nextYearProjection = analytics.nextYearProjection || 0
+
+    // Calculate income/expenses from averages for display
     const monthlyData = analytics.monthly
     const monthsWithData = monthlyData.filter((m) => m.income > 0 || m.expenses > 0)
 
@@ -239,12 +244,12 @@ export default function DashboardPage() {
         nextQuarter: {
           income: 0,
           expenses: 0,
-          balance: 0,
+          balance: nextQuarterProjection,
         },
         yearly: {
           income: 0,
           expenses: 0,
-          balance: 0,
+          balance: nextYearProjection,
         },
       }
     }
@@ -254,11 +259,9 @@ export default function DashboardPage() {
     const totalMonths = monthsToUse.length
 
     // Calculate averages
-    const totalNetRevenue = monthsToUse.reduce((sum, m) => sum + (m.income - m.expenses), 0)
     const totalIncome = monthsToUse.reduce((sum, m) => sum + m.income, 0)
     const totalExpenses = monthsToUse.reduce((sum, m) => sum + m.expenses, 0)
 
-    const averageMonthlyNetRevenue = totalNetRevenue / totalMonths
     const averageMonthlyIncome = totalIncome / totalMonths
     const averageMonthlyExpenses = totalExpenses / totalMonths
 
@@ -272,31 +275,25 @@ export default function DashboardPage() {
       averageMonthlyExpenses > 0
         ? averageMonthlyExpenses
         : financialSummary.totalExpenses / fallbackMonths
-    const fallbackMonthlyNetRevenue =
-      averageMonthlyNetRevenue !== 0
-        ? averageMonthlyNetRevenue
-        : (financialSummary.totalIncome - financialSummary.totalExpenses) / fallbackMonths
 
-    // Next Quarter Projections (3 months)
+    // Next Quarter Projections (3 months) - use backend projection for balance
     const projectedNextQuarterIncome = fallbackMonthlyIncome * 3
     const projectedNextQuarterExpenses = fallbackMonthlyExpenses * 3
-    const projectedNextQuarterBalance = fallbackMonthlyNetRevenue * 3
 
-    // Yearly Projections (12 months)
+    // Yearly Projections (12 months) - use backend projection for balance
     const projectedYearIncome = fallbackMonthlyIncome * 12
     const projectedYearExpenses = fallbackMonthlyExpenses * 12
-    const projectedYearBalance = fallbackMonthlyNetRevenue * 12
 
     return {
       nextQuarter: {
         income: projectedNextQuarterIncome,
         expenses: projectedNextQuarterExpenses,
-        balance: projectedNextQuarterBalance,
+        balance: nextQuarterProjection, // Use backend projection
       },
       yearly: {
         income: projectedYearIncome,
         expenses: projectedYearExpenses,
-        balance: projectedYearBalance,
+        balance: nextYearProjection, // Use backend projection
       },
     }
   }, [analytics, financialSummary])

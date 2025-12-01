@@ -3,18 +3,21 @@
 import { useState, useEffect, useCallback } from "react"
 import { userService } from "../services/userService"
 import type { User, UserFormData } from "../types/user"
+import { toast } from "@/lib/utils/toast"
 
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const loadUsers = useCallback(() => {
+  const loadUsers = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = userService.getUsers()
+      const data = await userService.getUsers()
       setUsers(data)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading users:", error)
+      const errorMessage = error?.message || "Failed to load users"
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -25,13 +28,16 @@ export function useUsers() {
   }, [loadUsers])
 
   const addUser = useCallback(
-    (userData: UserFormData): boolean => {
+    async (userData: UserFormData): Promise<boolean> => {
       try {
-        userService.addUser(userData)
-        loadUsers()
+        await userService.addUser(userData)
+        await loadUsers()
+        toast.success("User created successfully")
         return true
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error adding user:", error)
+        const errorMessage = error?.message || "Failed to create user"
+        toast.error(errorMessage)
         throw error
       }
     },
@@ -39,16 +45,19 @@ export function useUsers() {
   )
 
   const updateUser = useCallback(
-    (id: string, updates: Partial<Omit<User, "id" | "createdAt">>): boolean => {
+    async (id: string, updates: Partial<Omit<User, "id" | "createdAt">>): Promise<boolean> => {
       try {
-        const updated = userService.updateUser(id, updates)
+        const updated = await userService.updateUser(id, updates)
         if (updated) {
-          loadUsers()
+          await loadUsers()
+          toast.success("User updated successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error updating user:", error)
+        const errorMessage = error?.message || "Failed to update user"
+        toast.error(errorMessage)
         throw error
       }
     },
@@ -56,16 +65,19 @@ export function useUsers() {
   )
 
   const deleteUser = useCallback(
-    (id: string): boolean => {
+    async (id: string): Promise<boolean> => {
       try {
-        const deleted = userService.deleteUser(id)
+        const deleted = await userService.deleteUser(id)
         if (deleted) {
-          loadUsers()
+          await loadUsers()
+          toast.success("User deleted successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting user:", error)
+        const errorMessage = error?.message || "Failed to delete user"
+        toast.error(errorMessage)
         return false
       }
     },
@@ -73,16 +85,19 @@ export function useUsers() {
   )
 
   const enableUser = useCallback(
-    (id: string): boolean => {
+    async (id: string): Promise<boolean> => {
       try {
-        const enabled = userService.enableUser(id)
+        const enabled = await userService.enableUser(id)
         if (enabled) {
-          loadUsers()
+          await loadUsers()
+          toast.success("User enabled successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error enabling user:", error)
+        const errorMessage = error?.message || "Failed to enable user"
+        toast.error(errorMessage)
         return false
       }
     },
@@ -90,25 +105,28 @@ export function useUsers() {
   )
 
   const disableUser = useCallback(
-    (id: string): boolean => {
+    async (id: string): Promise<boolean> => {
       try {
-        const disabled = userService.disableUser(id)
+        const disabled = await userService.disableUser(id)
         if (disabled) {
-          loadUsers()
+          await loadUsers()
+          toast.success("User disabled successfully")
           return true
         }
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error disabling user:", error)
+        const errorMessage = error?.message || "Failed to disable user"
+        toast.error(errorMessage)
         return false
       }
     },
     [loadUsers]
   )
 
-  const resetPassword = useCallback((id: string): boolean => {
+  const resetPassword = useCallback(async (id: string): Promise<boolean> => {
     try {
-      return userService.resetPassword(id)
+      return await userService.resetPassword(id)
     } catch (error) {
       console.error("Error resetting password:", error)
       return false

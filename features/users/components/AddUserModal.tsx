@@ -154,25 +154,29 @@ export function AddUserModal({ open, onOpenChange, onSave }: AddUserModalProps) 
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!validateForm()) {
       return
     }
 
-    onSave({
-      userId: userId.trim(),
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim() || undefined,
-      password,
-      role,
-      status,
-    })
-
-    resetForm()
-    onOpenChange(false)
+    try {
+      await onSave({
+        userId: userId.trim(),
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        password,
+        role,
+        status,
+      })
+      resetForm()
+      onOpenChange(false)
+    } catch (error) {
+      // Error is handled by the hook with toast notification
+      // Keep modal open so user can fix errors
+    }
   }
 
   return (

@@ -33,6 +33,16 @@ export interface RevenueAnalytics {
     quarterly: number
     yearly: number
   }
+  categoryWiseIncome: Array<{
+    category: string
+    total: number
+  }>
+  categoryWiseExpenses: Array<{
+    category: string
+    total: number
+  }>
+  nextQuarterProjection: number
+  nextYearProjection: number
 }
 
 export interface BalanceSheet {
