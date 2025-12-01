@@ -41,25 +41,41 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Token management (stored in memory, not localStorage)
+// Token management
 let authToken: string | null = null;
 
-export const setToken = (token: string) => {
+export const setToken = (token: string, rememberMe: boolean = false) => {
   authToken = token;
-  // Optionally store in sessionStorage for page refresh persistence
   if (typeof window !== "undefined") {
-    sessionStorage.setItem("auth_token", token);
+    if (rememberMe) {
+      // Store in localStorage for persistence across browser sessions
+      localStorage.setItem("auth_token", token);
+      // Also clear sessionStorage to avoid conflicts
+      sessionStorage.removeItem("auth_token");
+    } else {
+      // Store in sessionStorage (cleared when browser closes)
+      sessionStorage.setItem("auth_token", token);
+      // Also clear localStorage to avoid conflicts
+      localStorage.removeItem("auth_token");
+    }
   }
 };
 
 export const getToken = (): string | null => {
   if (authToken) return authToken;
-  // Try to restore from sessionStorage
+  // Try to restore from storage (check localStorage first, then sessionStorage)
   if (typeof window !== "undefined") {
-    const stored = sessionStorage.getItem("auth_token");
-    if (stored) {
-      authToken = stored;
-      return stored;
+    // Check localStorage first (for "Remember Me" users)
+    const localStored = localStorage.getItem("auth_token");
+    if (localStored) {
+      authToken = localStored;
+      return localStored;
+    }
+    // Fallback to sessionStorage (for session-only users)
+    const sessionStored = sessionStorage.getItem("auth_token");
+    if (sessionStored) {
+      authToken = sessionStored;
+      return sessionStored;
     }
   }
   return null;
@@ -68,6 +84,8 @@ export const getToken = (): string | null => {
 export const clearToken = () => {
   authToken = null;
   if (typeof window !== "undefined") {
+    // Clear both storage types to ensure complete logout
+    localStorage.removeItem("auth_token");
     sessionStorage.removeItem("auth_token");
   }
 };

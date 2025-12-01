@@ -8,7 +8,8 @@ import type { AxiosError } from "axios"
 interface AuthStore extends AuthState {
   authenticate: (
     identifier: string,
-    password: string
+    password: string,
+    rememberMe?: boolean
   ) => Promise<{ success: boolean; error?: string }>
   login: (user: User) => void
   logout: () => void
@@ -55,7 +56,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  authenticate: async (identifier: string, password: string) => {
+  authenticate: async (identifier: string, password: string, rememberMe: boolean = false) => {
     try {
       if (!identifier || !password) {
         return { success: false, error: "Email/user ID and password are required" }
@@ -66,8 +67,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         password,
       })
 
-      // Store JWT token
-      setToken(response.access_token)
+      // Store JWT token with rememberMe flag
+      setToken(response.access_token, rememberMe)
 
       // Get full user data with permissions from /auth/me
       const fullUser = await authApi.getMe()
