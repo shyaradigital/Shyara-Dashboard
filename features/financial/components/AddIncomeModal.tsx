@@ -201,8 +201,8 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-[650px] flex-col overflow-hidden sm:rounded-lg">
-        <DialogHeader className="shrink-0">
+      <DialogContent className="flex max-h-[95vh] w-[95vw] max-w-[650px] flex-col overflow-hidden p-0 sm:max-w-[650px] sm:rounded-lg [&>button]:z-10">
+        <DialogHeader className="shrink-0 px-6 pt-6">
           <DialogTitle>{editingIncome ? "Edit Income" : "Add New Income"}</DialogTitle>
           <DialogDescription>
             {editingIncome
@@ -210,9 +210,9 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
               : "Add a new income entry to track your revenue."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="grid gap-4 py-4 pr-1">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6">
+            <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="amount">Amount *</Label>
               <Input
@@ -362,7 +362,7 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
             )}
             </div>
           </div>
-          <DialogFooter className="shrink-0 border-t pt-4">
+          <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
