@@ -201,7 +201,16 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[95vh] w-[95vw] max-w-[650px] flex-col overflow-hidden p-0 sm:max-w-[650px] sm:rounded-lg [&>button]:z-10">
+      <DialogContent 
+        className="flex max-h-[95vh] w-[95vw] max-w-[650px] flex-col overflow-hidden p-0 sm:max-w-[650px] sm:rounded-lg [&>button]:z-10"
+        style={{
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          maxHeight: '95vh',
+          marginTop: '0',
+          marginBottom: '0',
+        }}
+      >
         <DialogHeader className="shrink-0 px-6 pt-6">
           <DialogTitle>{editingIncome ? "Edit Income" : "Add New Income"}</DialogTitle>
           <DialogDescription>
