@@ -21,7 +21,7 @@
 - **Root Directory**: `backend` ⚠️ **IMPORTANT: Set this to `backend`**
 - **Runtime**: `Node`
 - **Build Command**: `npm install --include=dev && npm run build`
-- **Start Command**: `npm run start:prod`
+- **Start Command**: `npm run start:prod` (runs `node dist/main.js`)
 
 ### Environment Variables:
 Add these in the **Environment** section:
