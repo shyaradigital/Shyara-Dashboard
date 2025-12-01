@@ -123,7 +123,17 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "auth-storage",
-      storage: createJSONStorage(() => (typeof window !== "undefined" ? localStorage : undefined)),
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined") {
+          return localStorage
+        }
+        // Fallback for SSR - return a no-op storage
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        }
+      }),
       // Only persist user data, not isLoading
       partialize: (state) => ({
         user: state.user,
