@@ -42,6 +42,8 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           // Debug: Log login attempt
+          // NOTE: No rate limiting or device restrictions - users can login unlimited times
+          // from any device (within the same browser, as localStorage is browser-specific)
           console.log("🔐 AUTH DEBUG - Login attempt")
           console.log("  Identifier:", identifier, "| Length:", identifier.length)
           console.log("  Password input:", password, "| Length:", password.length)
@@ -139,7 +141,8 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: false,
           isLoading: false,
         })
-        // Clear localStorage
+        // Clear only auth storage (user session), NOT user data storage
+        // This allows users to login again immediately without losing their account
         if (typeof window !== "undefined") {
           localStorage.removeItem("auth-storage")
         }
