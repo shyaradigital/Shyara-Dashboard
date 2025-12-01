@@ -52,28 +52,12 @@ export default function DashboardPage() {
   const { incomes, summary: incomeSummary, isLoading: incomeLoading, markDueAsPaid } = useIncome()
 
   const { expenses, summary: expenseSummary, isLoading: expenseLoading } = useExpenses()
-  
-  const [outstandingDues, setOutstandingDues] = useState<number>(0)
 
   // Refresh summary when income or expenses change
   useEffect(() => {
     refreshSummary()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomes.length, expenses.length])
-
-  // Load outstanding dues total
-  useEffect(() => {
-    const loadDues = async () => {
-      try {
-        const dues = await incomeService.getOutstandingDues()
-        const total = dues.reduce((sum, due) => sum + (due.dueAmount || 0), 0)
-        setOutstandingDues(total)
-      } catch (error) {
-        console.error("Error loading outstanding dues:", error)
-      }
-    }
-    loadDues()
-  }, [incomes])
 
   const formatCurrency = (amount: number) => {
     if (isNaN(amount) || !isFinite(amount)) return "₹0.00"

@@ -130,8 +130,9 @@ export default function FinancialPage() {
     try {
       exportFinancialData(incomes, expenses)
       toast.success(`Exported ${incomes.length} income and ${expenses.length} expense entries`)
-    } catch (error: any) {
-      toast.error(error.message || "Failed to export data")
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to export data"
+      toast.error(errorMessage)
     }
   }
 
@@ -170,8 +171,9 @@ export default function FinancialPage() {
       } else {
         toast.success(`Successfully imported ${importedCount} entries`)
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to import data")
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to import data"
+      toast.error(errorMessage)
       throw error
     }
   }

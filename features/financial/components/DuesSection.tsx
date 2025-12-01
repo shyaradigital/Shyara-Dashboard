@@ -65,9 +65,10 @@ export function DuesSection({ onMarkDuePaid }: DuesSectionProps) {
       })
       
       setDues(duesWithStatus)
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error loading dues:", error)
-      toast.error(error?.message || "Failed to load outstanding dues")
+      const errorMessage = error instanceof Error ? error.message : "Failed to load outstanding dues"
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -86,9 +87,10 @@ export function DuesSection({ onMarkDuePaid }: DuesSectionProps) {
         toast.success("Due marked as paid successfully")
       }
       await loadDues()
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error marking due as paid:", error)
-      toast.error(error?.message || "Failed to mark due as paid")
+      const errorMessage = error instanceof Error ? error.message : "Failed to mark due as paid"
+      toast.error(errorMessage)
     }
   }
 
