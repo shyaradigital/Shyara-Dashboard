@@ -98,22 +98,30 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
   const snapshot = getFinancialSnapshot()
 
-  const handleAddIncome = async (income: Omit<Income, "id" | "createdAt" | "updatedAt">) => {
+  const handleAddIncome = async (
+    income: Omit<Income, "id" | "createdAt" | "updatedAt">
+  ): Promise<boolean> => {
     if (addIncome) {
       const success = await addIncome(income)
       if (success) {
         setAddIncomeModalOpen(false)
       }
+      return success
     }
+    return false
   }
 
-  const handleAddExpense = async (expense: Omit<Expense, "id" | "createdAt" | "updatedAt">) => {
+  const handleAddExpense = async (
+    expense: Omit<Expense, "id" | "createdAt" | "updatedAt">
+  ): Promise<boolean> => {
     if (addExpense) {
       const success = await addExpense(expense)
       if (success) {
         setAddExpenseModalOpen(false)
       }
+      return success
     }
+    return false
   }
 
   if (!user) return null
