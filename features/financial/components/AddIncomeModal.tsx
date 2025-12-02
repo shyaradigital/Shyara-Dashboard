@@ -165,7 +165,7 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
         advanceAmount: advanceValue,
         dueAmount: dueValue,
         dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-        isDuePaid: dueValue === 0,
+        // Note: isDuePaid is calculated by the backend based on dueAmount, so we don't send it
       })
 
       if (result === true || result === undefined) {
