@@ -38,6 +38,8 @@ export function useExpenses() {
       try {
         await expenseService.create(expense)
         await loadExpenses()
+        // Dispatch custom event to notify other components (like Topbar) to refresh financial summary
+        window.dispatchEvent(new CustomEvent("financial-data-changed"))
         toast.success("Expense added successfully")
         return true
       } catch (error: any) {
@@ -56,6 +58,8 @@ export function useExpenses() {
         const updated = await expenseService.update(id, updates)
         if (updated) {
           await loadExpenses()
+          // Dispatch custom event to notify other components (like Topbar) to refresh financial summary
+          window.dispatchEvent(new CustomEvent("financial-data-changed"))
           toast.success("Expense updated successfully")
           return true
         }
@@ -76,6 +80,8 @@ export function useExpenses() {
         const success = await expenseService.delete(id)
         if (success) {
           await loadExpenses()
+          // Dispatch custom event to notify other components (like Topbar) to refresh financial summary
+          window.dispatchEvent(new CustomEvent("financial-data-changed"))
           toast.success("Expense deleted successfully")
           return true
         }

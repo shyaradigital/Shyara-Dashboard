@@ -38,6 +38,8 @@ export function useIncome() {
       try {
         await incomeService.create(income)
         await loadIncomes()
+        // Dispatch custom event to notify other components (like Topbar) to refresh financial summary
+        window.dispatchEvent(new CustomEvent("financial-data-changed"))
         toast.success("Income added successfully")
         return true
       } catch (error: any) {
@@ -56,6 +58,8 @@ export function useIncome() {
         const updated = await incomeService.update(id, updates)
         if (updated) {
           await loadIncomes()
+          // Dispatch custom event to notify other components (like Topbar) to refresh financial summary
+          window.dispatchEvent(new CustomEvent("financial-data-changed"))
           toast.success("Income updated successfully")
           return true
         }
@@ -76,6 +80,8 @@ export function useIncome() {
         const success = await incomeService.delete(id)
         if (success) {
           await loadIncomes()
+          // Dispatch custom event to notify other components (like Topbar) to refresh financial summary
+          window.dispatchEvent(new CustomEvent("financial-data-changed"))
           toast.success("Income deleted successfully")
           return true
         }
@@ -99,6 +105,8 @@ export function useIncome() {
       try {
         await incomeService.markDueAsPaid(id)
         await loadIncomes()
+        // Dispatch custom event to notify other components (like Topbar) to refresh financial summary
+        window.dispatchEvent(new CustomEvent("financial-data-changed"))
         toast.success("Due marked as paid successfully")
       } catch (error: any) {
         console.error("Error marking due as paid:", error)

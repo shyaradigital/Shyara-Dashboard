@@ -35,6 +35,19 @@ export function useFinancialSummary() {
     loadSummary()
   }, [loadSummary])
 
+  // Listen for financial data changes (e.g., when income/expenses are added, updated, or deleted)
+  useEffect(() => {
+    const handleFinancialDataChange = () => {
+      loadSummary()
+    }
+
+    window.addEventListener("financial-data-changed", handleFinancialDataChange)
+
+    return () => {
+      window.removeEventListener("financial-data-changed", handleFinancialDataChange)
+    }
+  }, [loadSummary])
+
   return {
     summary,
     analytics,
