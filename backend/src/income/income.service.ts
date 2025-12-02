@@ -203,11 +203,18 @@ export class IncomeService {
       throw new NotFoundException(`Income with ID "${id}" has no outstanding dues`);
     }
 
+    // When dues are paid, add the due amount to the income amount
+    // This ensures the paid dues are included in total income calculations
+    const updatedAmount = existing.amount + existing.dueAmount;
+
     const income = await this.prisma.income.update({
       where: { id },
       data: {
         isDuePaid: true,
         duePaidDate: paidDate || new Date(),
+        amount: updatedAmount,
+        // Set dueAmount to 0 since it's now been paid and added to amount
+        dueAmount: 0,
       },
     });
 
