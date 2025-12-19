@@ -76,17 +76,32 @@ export function DuesSection({ onMarkDuePaid }: DuesSectionProps) {
 
   useEffect(() => {
     loadDues()
+    
+    // Listen for financial data changes to auto-refresh
+    const handleFinancialDataChange = () => {
+      loadDues()
+    }
+    
+    window.addEventListener("financial-data-changed", handleFinancialDataChange)
+    
+    return () => {
+      window.removeEventListener("financial-data-changed", handleFinancialDataChange)
+    }
   }, [])
 
   const handleMarkAsPaid = async (id: string) => {
     try {
       if (onMarkDuePaid) {
         await onMarkDuePaid(id)
+        // The callback should handle the refresh, but we'll refresh here too as a safety measure
+        await loadDues()
       } else {
         await incomeService.markDueAsPaid(id)
         toast.success("Due marked as paid successfully")
+        await loadDues()
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent("financial-data-changed"))
       }
-      await loadDues()
     } catch (error) {
       console.error("Error marking due as paid:", error)
       const errorMessage = error instanceof Error ? error.message : "Failed to mark due as paid"

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateIncomeDto } from "./dto/create-income.dto";
 import { UpdateIncomeDto } from "./dto/update-income.dto";
@@ -98,6 +98,16 @@ export class IncomeService {
       throw new NotFoundException(`Income with ID "${id}" not found`);
     }
 
+    // If dues are already paid, prevent modification of dues-related fields
+    if (existing.isDuePaid && existing.dueAmount === 0) {
+      const duesFields = ['totalAmount', 'advanceAmount', 'dueAmount', 'dueDate', 'isDuePaid'];
+      const hasDuesFieldUpdate = duesFields.some(field => updateIncomeDto[field as keyof UpdateIncomeDto] !== undefined);
+      
+      if (hasDuesFieldUpdate) {
+        throw new BadRequestException(`Cannot modify dues fields for income with ID "${id}" - dues have already been paid`);
+      }
+    }
+
     const updateData: any = { ...updateIncomeDto };
     if (updateIncomeDto.date) {
       updateData.date = new Date(updateIncomeDto.date);
@@ -107,6 +117,25 @@ export class IncomeService {
     }
     if (updateIncomeDto.duePaidDate) {
       updateData.duePaidDate = new Date(updateIncomeDto.duePaidDate);
+    }
+
+    // Validate dues fields consistency if they're being updated
+    if (updateData.totalAmount !== undefined || updateData.advanceAmount !== undefined || updateData.dueAmount !== undefined) {
+      const totalAmount = updateData.totalAmount ?? existing.totalAmount ?? null;
+      const advanceAmount = updateData.advanceAmount ?? existing.advanceAmount ?? null;
+      const dueAmount = updateData.dueAmount ?? existing.dueAmount ?? null;
+
+      if (totalAmount !== null && advanceAmount !== null && dueAmount !== null) {
+        // Allow small floating point tolerance
+        if (Math.abs(advanceAmount + dueAmount - totalAmount) > 0.01) {
+          throw new BadRequestException(`Invalid dues fields: advanceAmount (${advanceAmount}) + dueAmount (${dueAmount}) must equal totalAmount (${totalAmount})`);
+        }
+      }
+
+      // Auto-calculate isDuePaid based on dueAmount
+      if (dueAmount !== null) {
+        updateData.isDuePaid = dueAmount === 0 || dueAmount === null;
+      }
     }
 
     const income = await this.prisma.income.update({
@@ -203,8 +232,13 @@ export class IncomeService {
       throw new NotFoundException(`Income with ID "${id}" has no outstanding dues`);
     }
 
+    if (existing.isDuePaid) {
+      throw new NotFoundException(`Income with ID "${id}" already has dues marked as paid`);
+    }
+
     // When dues are paid, add the due amount to the income amount
     // This ensures the paid dues are included in total income calculations
+    // The amount field represents the total received (advance + paid dues)
     const updatedAmount = existing.amount + existing.dueAmount;
 
     const income = await this.prisma.income.update({
@@ -215,6 +249,10 @@ export class IncomeService {
         amount: updatedAmount,
         // Set dueAmount to 0 since it's now been paid and added to amount
         dueAmount: 0,
+        // Note: totalAmount and advanceAmount are preserved for historical record-keeping
+        // totalAmount = original project total
+        // advanceAmount = initial advance received
+        // amount = total received (advance + paid dues) = totalAmount when fully paid
       },
     });
 

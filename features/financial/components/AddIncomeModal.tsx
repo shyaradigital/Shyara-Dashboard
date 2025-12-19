@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Income, IncomeCategory } from "../types/income"
+import { toast } from "@/lib/utils/toast"
 
 interface AddIncomeModalProps {
   open: boolean
@@ -85,14 +86,27 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
         setDescription(editingIncome.description || "")
         setDate(editingIncome.date.split("T")[0])
         
-        // Handle advance/due fields
-        const hasDues = editingIncome.totalAmount !== undefined || 
-                       (editingIncome.dueAmount !== undefined && editingIncome.dueAmount > 0)
+        // Handle advance/due fields - check if income has dues structure
+        // An income has dues if: totalAmount exists OR (dueAmount exists and > 0) OR advanceAmount exists and differs from amount
+        const hasDues = editingIncome.totalAmount !== undefined && editingIncome.totalAmount !== null ||
+                       (editingIncome.dueAmount !== undefined && editingIncome.dueAmount !== null && editingIncome.dueAmount > 0) ||
+                       (editingIncome.advanceAmount !== undefined && editingIncome.advanceAmount !== null && 
+                        Math.abs(editingIncome.advanceAmount - editingIncome.amount) > 0.01)
+        
         setHasAdvanceAndDues(hasDues)
+        
         if (hasDues) {
-          setTotalAmount(editingIncome.totalAmount?.toString() || editingIncome.amount.toString())
-          setAdvanceAmount(editingIncome.advanceAmount?.toString() || editingIncome.amount.toString())
-          setDueAmount(editingIncome.dueAmount?.toString() || "0")
+          // If totalAmount exists, use it; otherwise calculate from advance + due or use amount as total
+          const total = editingIncome.totalAmount ?? 
+                       (editingIncome.advanceAmount && editingIncome.dueAmount 
+                        ? editingIncome.advanceAmount + editingIncome.dueAmount 
+                        : editingIncome.amount)
+          const advance = editingIncome.advanceAmount ?? editingIncome.amount
+          const due = editingIncome.dueAmount ?? 0
+          
+          setTotalAmount(total.toString())
+          setAdvanceAmount(advance.toString())
+          setDueAmount(due.toString())
           setDueDate(editingIncome.dueDate ? editingIncome.dueDate.split("T")[0] : "")
         } else {
           setTotalAmount("")
@@ -104,6 +118,9 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
         // Always reset to today's date when opening for new entry
         resetForm()
       }
+    } else {
+      // Reset form when modal closes
+      resetForm()
     }
   }, [editingIncome, open])
 
@@ -139,7 +156,8 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
 
     // Validation for advance/due mode
     if (hasAdvanceAndDues) {
-      if (!totalAmount) {
+      if (!totalAmount || !advanceAmount) {
+        toast.error("Total Amount and Advance Amount are required when using advance/dues mode")
         return
       }
       const totalValue = parseFloat(totalAmount)
@@ -147,11 +165,23 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
       const dueValue = parseFloat(dueAmount) || 0
       
       if (isNaN(totalValue) || totalValue <= 0) {
+        toast.error("Total Amount must be greater than 0")
+        return
+      }
+      
+      if (isNaN(advanceValue) || advanceValue < 0) {
+        toast.error("Advance Amount must be a valid non-negative number")
+        return
+      }
+      
+      if (advanceValue > totalValue) {
+        toast.error("Advance Amount cannot be greater than Total Amount")
         return
       }
       
       // Validate that advance + due = total (with small tolerance for floating point)
       if (Math.abs(advanceValue + dueValue - totalValue) > 0.01) {
+        toast.error("Advance Amount + Due Amount must equal Total Amount")
         return
       }
 
@@ -223,16 +253,31 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
           <div className="min-h-0 flex-1 overflow-y-auto px-6">
             <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount *</Label>
+              <Label htmlFor="amount">
+                {hasAdvanceAndDues ? "Advance Amount (Initial Payment)" : "Amount"} *
+              </Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 placeholder="0.00"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
+                onChange={(e) => {
+                  setAmount(e.target.value)
+                  // If in advance/dues mode and total amount isn't set yet, update advance amount too
+                  if (hasAdvanceAndDues && !totalAmount && e.target.value) {
+                    setAdvanceAmount(e.target.value)
+                  }
+                }}
+                required={!hasAdvanceAndDues}
+                disabled={hasAdvanceAndDues}
+                className={hasAdvanceAndDues ? "bg-muted" : ""}
               />
+              {hasAdvanceAndDues && (
+                <p className="text-xs text-muted-foreground">
+                  Use the Advance Amount field below to set the initial payment
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="category">Category *</Label>
@@ -288,7 +333,12 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
               <Checkbox
                 id="hasAdvanceAndDues"
                 checked={hasAdvanceAndDues}
+                disabled={editingIncome?.isDuePaid}
                 onCheckedChange={(checked) => {
+                  // Prevent unchecking if dues are already paid
+                  if (editingIncome?.isDuePaid) {
+                    return
+                  }
                   setHasAdvanceAndDues(checked === true)
                   if (checked) {
                     // Pre-fill with current amount if available
@@ -305,15 +355,21 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
                   }
                 }}
               />
-              <Label htmlFor="hasAdvanceAndDues" className="text-sm font-normal cursor-pointer">
+              <Label 
+                htmlFor="hasAdvanceAndDues" 
+                className={`text-sm font-normal ${editingIncome?.isDuePaid ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+              >
                 Has advance payment and dues
+                {editingIncome?.isDuePaid && (
+                  <span className="ml-2 text-xs text-muted-foreground">(Dues already paid - cannot modify)</span>
+                )}
               </Label>
             </div>
 
             {hasAdvanceAndDues && (
               <div className="grid gap-4 pl-6 border-l-2 border-muted">
                 <div className="grid gap-2">
-                  <Label htmlFor="totalAmount">Total Amount *</Label>
+                  <Label htmlFor="totalAmount">Total Amount (Project/Transaction Total) *</Label>
                   <Input
                     id="totalAmount"
                     type="number"
@@ -321,29 +377,59 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
                     placeholder="0.00"
                     value={totalAmount}
                     onChange={(e) => {
-                      setTotalAmount(e.target.value)
-                      // Auto-update advance if it was equal to old total
-                      if (advanceAmount === totalAmount) {
-                        setAdvanceAmount(e.target.value)
+                      // Prevent editing if dues are already paid
+                      if (editingIncome?.isDuePaid) {
+                        return
+                      }
+                      const newTotal = e.target.value
+                      setTotalAmount(newTotal)
+                      // If advance was equal to old total, keep it equal to new total
+                      if (totalAmount && advanceAmount === totalAmount) {
+                        setAdvanceAmount(newTotal)
                       }
                     }}
                     required
+                    disabled={editingIncome?.isDuePaid}
+                    className={editingIncome?.isDuePaid ? "bg-muted" : ""}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    The total amount for this project or transaction
+                    {editingIncome?.isDuePaid && " (Cannot modify - dues already paid)"}
+                  </p>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="advanceAmount">Advance Amount *</Label>
+                  <Label htmlFor="advanceAmount">Advance Amount (Received Amount) *</Label>
                   <Input
                     id="advanceAmount"
                     type="number"
                     step="0.01"
                     placeholder="0.00"
                     value={advanceAmount}
-                    onChange={(e) => setAdvanceAmount(e.target.value)}
+                    onChange={(e) => {
+                      // Prevent editing if dues are already paid
+                      if (editingIncome?.isDuePaid) {
+                        return
+                      }
+                      const newAdvance = e.target.value
+                      setAdvanceAmount(newAdvance)
+                      // Also update the main amount field for consistency
+                      if (newAdvance) {
+                        setAmount(newAdvance)
+                      }
+                    }}
                     required
+                    disabled={editingIncome?.isDuePaid}
+                    className={editingIncome?.isDuePaid ? "bg-muted" : ""}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    The amount already received (advance payment)
+                    {editingIncome?.isDuePaid && " (Cannot modify - dues already paid)"}
+                  </p>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="dueAmount">Due Amount</Label>
+                  <Label htmlFor="dueAmount">
+                    Due Amount {editingIncome?.isDuePaid ? "(Paid)" : ""}
+                  </Label>
                   <Input
                     id="dueAmount"
                     type="number"
@@ -355,7 +441,7 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
                     className="bg-muted"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Calculated automatically (Total - Advance)
+                    Calculated automatically (Total - Advance). {editingIncome?.isDuePaid ? "This due has been marked as paid." : "This amount is still pending."}
                   </p>
                 </div>
                 <div className="grid gap-2">
@@ -364,8 +450,20 @@ export function AddIncomeModal({ open, onOpenChange, onSave, editingIncome }: Ad
                     id="dueDate"
                     type="date"
                     value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    onChange={(e) => {
+                      // Prevent editing if dues are already paid
+                      if (editingIncome?.isDuePaid) {
+                        return
+                      }
+                      setDueDate(e.target.value)
+                    }}
+                    disabled={editingIncome?.isDuePaid}
+                    className={editingIncome?.isDuePaid ? "bg-muted" : ""}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Expected payment date for the remaining due amount
+                    {editingIncome?.isDuePaid && " (Cannot modify - dues already paid)"}
+                  </p>
                 </div>
               </div>
             )}
