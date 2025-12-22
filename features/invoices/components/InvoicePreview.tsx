@@ -1,0 +1,40 @@
+"use client"
+
+import { useEffect, useRef } from "react"
+import type { Invoice } from "../types/invoice"
+import { generateInvoiceHTML } from "../utils/templateProcessor"
+
+interface InvoicePreviewProps {
+  invoice: Invoice
+}
+
+export function InvoicePreview({ invoice }: InvoicePreviewProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  useEffect(() => {
+    if (iframeRef.current) {
+      const html = generateInvoiceHTML(invoice)
+      const iframe = iframeRef.current
+      const doc = iframe.contentDocument || iframe.contentWindow?.document
+
+      if (doc) {
+        doc.open()
+        doc.write(html)
+        doc.close()
+      }
+    }
+  }, [invoice])
+
+  return (
+    <div className="h-full w-full overflow-hidden rounded-lg border bg-white">
+      <iframe
+        ref={iframeRef}
+        className="h-full w-full border-0"
+        title="Invoice Preview"
+        sandbox="allow-same-origin"
+        style={{ minHeight: "600px" }}
+      />
+    </div>
+  )
+}
+
