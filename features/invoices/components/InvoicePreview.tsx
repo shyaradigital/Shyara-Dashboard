@@ -26,19 +26,22 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   }, [invoice])
 
   return (
-    <div className="h-full w-full overflow-auto overscroll-contain rounded-lg border bg-white">
-      <iframe
-        ref={iframeRef}
-        className="h-full w-full border-0"
-        title="Invoice Preview"
-        sandbox="allow-same-origin"
-        scrolling="yes"
-        style={{
-          minHeight: "600px",
-          minWidth: "100%",
-          display: "block",
-        }}
-      />
+    <div className="h-full w-full overflow-auto overscroll-contain rounded-lg border bg-white touch-pan-x touch-pan-y">
+      <div className="min-w-full inline-block">
+        <iframe
+          ref={iframeRef}
+          className="border-0"
+          title="Invoice Preview"
+          sandbox="allow-same-origin"
+          scrolling="yes"
+          style={{
+            minHeight: "600px",
+            width: "100%",
+            minWidth: "980px",
+            display: "block",
+          }}
+        />
+      </div>
     </div>
   )
 }
