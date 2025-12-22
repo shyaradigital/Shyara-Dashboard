@@ -389,10 +389,10 @@ export function generateInvoiceHTML(invoice: Invoice): string {
       }
       
       .page{ 
-        max-width: 100% !important;
-        min-width: 100% !important;
-        width: 100% !important;
-        margin: 0 !important;
+        max-width: 210mm !important;
+        min-width: 210mm !important;
+        width: 210mm !important;
+        margin: 0 auto !important;
         padding: 0 !important;
       }
       
