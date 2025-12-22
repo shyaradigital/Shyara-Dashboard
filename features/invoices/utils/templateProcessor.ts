@@ -169,6 +169,7 @@ export function generateInvoiceHTML(invoice: Invoice): string {
     .invoice-meta{
       text-align:right;
       min-width: 260px;
+      flex-shrink: 0;
     }
 
     .badge{
