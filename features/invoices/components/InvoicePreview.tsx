@@ -26,8 +26,8 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   }, [invoice])
 
   return (
-    <div className="h-full w-full overflow-auto overscroll-contain rounded-lg border bg-white touch-pan-x touch-pan-y">
-      <div className="min-w-full inline-block">
+    <div className="w-full h-full overflow-auto overscroll-contain rounded-lg border bg-white touch-pan-x touch-pan-y">
+      <div className="inline-block" style={{ minWidth: "980px", width: "100%" }}>
         <iframe
           ref={iframeRef}
           className="border-0"
@@ -36,9 +36,11 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
           scrolling="yes"
           style={{
             minHeight: "600px",
-            width: "100%",
+            height: "100%",
+            width: "980px",
             minWidth: "980px",
             display: "block",
+            border: "none",
           }}
         />
       </div>
