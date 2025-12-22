@@ -120,7 +120,7 @@ export function generateInvoiceHTML(invoice: Invoice): string {
       gap:16px;
       align-items:flex-start;
       justify-content:space-between;
-      flex-wrap:wrap;
+      flex-wrap:nowrap;
     }
 
     .brand{
@@ -128,6 +128,7 @@ export function generateInvoiceHTML(invoice: Invoice): string {
       gap:14px;
       align-items:flex-start;
       min-width: 300px;
+      flex: 1;
     }
 
     .logo{
@@ -536,7 +537,6 @@ export function generateInvoiceHTML(invoice: Invoice): string {
               <div><b>PO / Ref:</b></div><div>${escapeHtml(invoice.poRef || "—")}</div>
               <div><b>Payment:</b></div><div>${escapeHtml(invoice.paymentTerms || "—")}</div>
               <div><b>Terms:</b></div><div>${escapeHtml(invoice.paymentTerms || "—")}</div>
-              <div><b>GST:</b></div><div>${client.gstin ? "GST applicable" : "Add GSTIN when available"}</div>
             </div>
           </div>
         </div>
