@@ -80,10 +80,10 @@ export function generateInvoiceHTML(invoice: Invoice): string {
     }
 
     .page{
-      max-width: 980px;
-      min-width: min(980px, 100%);
+      max-width: 210mm; /* A4 width */
+      width: 210mm; /* A4 width */
+      min-width: min(210mm, 100%);
       margin: 0 auto;
-      width: 100%;
     }
 
     .invoice-card{
