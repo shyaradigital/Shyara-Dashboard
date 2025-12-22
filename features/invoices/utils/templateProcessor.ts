@@ -81,7 +81,9 @@ export function generateInvoiceHTML(invoice: Invoice): string {
 
     .page{
       max-width: 980px;
+      min-width: 980px;
       margin: 0 auto;
+      width: 100%;
     }
 
     .invoice-card{
