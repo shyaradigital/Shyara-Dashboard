@@ -339,7 +339,6 @@ export function InvoiceGenerator() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
 
       {/* Preview Modal */}
