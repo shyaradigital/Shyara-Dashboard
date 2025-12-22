@@ -371,13 +371,115 @@ export function generateInvoiceHTML(invoice: Invoice): string {
     }
 
     /* print */
+    @page {
+      size: A4;
+      margin: 10mm 15mm;
+    }
+
     @media print{
-      body{ background:#fff; padding:0; }
-      .invoice-card{ box-shadow:none; }
-      .badge{ border-color:#ddd; }
-      .notes{ border-style:solid; }
-      a{ color:inherit; text-decoration:none; }
-      .page{ max-width: 100%; }
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      
+      body{ 
+        background:#fff !important; 
+        padding:0 !important;
+        margin: 0;
+      }
+      
+      .page{ 
+        max-width: 100% !important;
+        min-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      .invoice-card{ 
+        box-shadow:none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      .topbar {
+        padding: 15px 20px 10px !important;
+        background: #fff !important;
+        border-bottom: 1px solid #ddd !important;
+      }
+      
+      .topbar::after {
+        display: none !important;
+      }
+      
+      .content {
+        padding: 15px 20px !important;
+      }
+      
+      .footer {
+        padding: 15px 20px !important;
+        border-top: 1px solid #ddd !important;
+        background: #fff !important;
+      }
+      
+      .badge{ 
+        border-color:#ddd !important;
+        background: #f3f4f6 !important;
+      }
+      
+      .notes{ 
+        border-style:solid !important;
+        border-color: #ddd !important;
+        background: #f9fafb !important;
+      }
+      
+      table {
+        border: 1px solid #ddd !important;
+        page-break-inside: auto;
+      }
+      
+      tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+      
+      thead {
+        display: table-header-group;
+      }
+      
+      tfoot {
+        display: table-footer-group;
+      }
+      
+      .bottom {
+        page-break-inside: avoid;
+      }
+      
+      .totals {
+        page-break-inside: avoid;
+      }
+      
+      a{ 
+        color:inherit !important; 
+        text-decoration:none !important; 
+      }
+      
+      /* Ensure proper spacing for print */
+      .two-col {
+        margin-bottom: 12px !important;
+      }
+      
+      .box {
+        padding: 10px 12px !important;
+        margin-bottom: 0 !important;
+      }
+      
+      /* Hide tip message */
+      .page > div:last-child {
+        display: none !important;
+      }
     }
   </style>
 </head>
