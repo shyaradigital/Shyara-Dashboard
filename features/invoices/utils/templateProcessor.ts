@@ -576,10 +576,10 @@ export function generateInvoiceHTML(invoice: Invoice): string {
       <div class="footer">
         <div class="bank">
           <b>Bank Details</b><br/>
-          Account Name: <b>SHYARA TECH SOLUTION (OPC) PRIVATE LIMITED</b><br/>
-          Bank Name: <b>XXXX Bank</b> &nbsp;|&nbsp; A/C No: <b>XXXXXXXXXXXX</b><br/>
-          IFSC: <b>XXXXXXXX</b> &nbsp;|&nbsp; Branch: <b>Patna</b><br/>
-          UPI ID (optional): <b>yourupi@bank</b>
+          Account Name: <b>KIRTY RANI</b><br/>
+          Bank Name: <b>SBI</b> &nbsp;|&nbsp; A/C No: <b>20360076424</b><br/>
+          Branch: <b>Bahadurpur, Patna</b><br/>
+          UPI ID: <b>SHYARADIGITAL@OKHDFCBANK</b>
         </div>
 
         <div class="sign">
