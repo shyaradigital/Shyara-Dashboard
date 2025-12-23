@@ -386,7 +386,7 @@ export function InvoiceGenerator() {
 
       {/* Preview Modal */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] sm:w-[90vw] sm:h-[90vh] md:w-[95vw] md:h-[95vh] overflow-hidden p-0 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%] flex flex-col">
+        <DialogContent className="max-w-[95vw] max-h-[calc(100vh-2rem)] w-[95vw] h-[calc(100vh-2rem)] sm:w-[90vw] sm:h-[calc(100vh-2rem)] md:w-[95vw] md:h-[calc(100vh-2rem)] overflow-hidden p-0 m-0 left-[50%] top-4 translate-x-[-50%] translate-y-0 flex flex-col">
           <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-6 pb-2 flex-shrink-0">
             <DialogTitle>Invoice Preview</DialogTitle>
             <DialogDescription>Preview of your invoice - Use zoom controls to adjust view</DialogDescription>
