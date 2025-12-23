@@ -27,7 +27,36 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
         doc.close()
       }
     }
+    // Reset zoom when invoice changes
+    setZoom(1)
   }, [invoice])
+
+  // Auto-fit to width on mount and when container size changes
+  useEffect(() => {
+    const fitToWidth = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth - 32 // Account for padding
+        // 210mm ≈ 794px at 96dpi (210 * 3.779527559)
+        const invoiceWidthPx = 794
+        const calculatedZoom = Math.min(containerWidth / invoiceWidthPx, 1.2)
+        if (calculatedZoom > 0.3) {
+          // Only auto-fit if reasonable
+          setZoom(calculatedZoom)
+        }
+      }
+    }
+
+    // Fit on mount
+    const timer = setTimeout(fitToWidth, 100)
+
+    // Fit on resize
+    window.addEventListener("resize", fitToWidth)
+    
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener("resize", fitToWidth)
+    }
+  }, [])
 
   const handleZoomIn = () => {
     setZoom((prev) => Math.min(prev + 0.1, 2))
@@ -42,13 +71,12 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   }
 
   const handleFitToWidth = () => {
-    if (containerRef.current && iframeRef.current) {
-      const containerWidth = containerRef.current.clientWidth
-      const invoiceWidth = 210 // 210mm in CSS units
-      // Convert mm to pixels (approximate: 1mm ≈ 3.78px at 96dpi)
-      const invoiceWidthPx = invoiceWidth * 3.78
-      const calculatedZoom = containerWidth / invoiceWidthPx
-      setZoom(Math.min(calculatedZoom, 1.5))
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.clientWidth - 32 // Account for padding
+      // 210mm ≈ 794px at 96dpi (210 * 3.779527559)
+      const invoiceWidthPx = 794
+      const calculatedZoom = Math.min(containerWidth / invoiceWidthPx, 1.2)
+      setZoom(calculatedZoom)
     }
   }
 
@@ -106,7 +134,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
       {/* Preview Container */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto overscroll-contain rounded-lg border bg-white touch-pan-x touch-pan-y"
+        className="flex-1 overflow-auto overscroll-contain rounded-lg border bg-transparent touch-pan-x touch-pan-y"
         style={{ minHeight: 0 }}
       >
         <div
