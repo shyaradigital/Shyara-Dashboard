@@ -454,7 +454,7 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
   }, [zoom])
 
   // Calculate iframe transform
-  const iframeStyle = useMemo(() => {
+  const iframeStyle = useMemo((): React.CSSProperties => {
     return {
       width: `${INVOICE_WIDTH_PX}px`,
       minWidth: `${INVOICE_WIDTH_PX}px`,
@@ -464,7 +464,7 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
       transformOrigin: "top left",
       display: "block",
       border: "none",
-      visibility: "visible",
+      visibility: "visible" as const,
       opacity: 1,
     }
   }, [zoom])
