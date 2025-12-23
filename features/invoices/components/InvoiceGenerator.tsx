@@ -68,12 +68,23 @@ export function InvoiceGenerator() {
       if (printWindow) {
         printWindow.document.write(html)
         printWindow.document.close()
-        // Use setTimeout as fallback if onload doesn't fire
-        setTimeout(() => {
-          printWindow?.print()
-        }, 250)
-        printWindow.onload = () => {
+        
+        // Wait for document to be ready, then print once
+        const printOnce = () => {
           printWindow.print()
+          // Return focus to main window after print dialog closes
+          window.focus()
+        }
+        
+        // Use a single method to trigger print
+        if (printWindow.document.readyState === "complete") {
+          // Document already loaded, print immediately
+          setTimeout(printOnce, 100)
+        } else {
+          // Wait for document to load
+          printWindow.onload = () => {
+            setTimeout(printOnce, 100)
+          }
         }
       } else {
         alert("Please allow popups to print the invoice")
@@ -367,12 +378,12 @@ export function InvoiceGenerator() {
 
       {/* Preview Modal */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-[98vw] max-h-[98vh] w-[98vw] h-[98vh] overflow-hidden p-0 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%]">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] sm:w-[90vw] sm:h-[90vh] md:w-[95vw] md:h-[95vh] overflow-hidden p-0 m-0 translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%] flex flex-col">
           <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-6 pb-2 flex-shrink-0">
             <DialogTitle>Invoice Preview</DialogTitle>
-            <DialogDescription>Preview of your invoice - Scroll to view full content</DialogDescription>
+            <DialogDescription>Preview of your invoice - Use zoom controls to adjust view</DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-auto overscroll-contain px-2 pb-2 sm:px-4 sm:pb-4 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <InvoicePreview invoice={getInvoice()} />
           </div>
         </DialogContent>
