@@ -69,23 +69,31 @@ export function InvoiceGenerator() {
         printWindow.document.write(html)
         printWindow.document.close()
         
-        // Wait for document to be ready, then print once
+        let hasPrinted = false
+        
+        // Single print function that only executes once
         const printOnce = () => {
+          if (hasPrinted) return
+          hasPrinted = true
           printWindow.print()
-          // Return focus to main window after print dialog closes
-          window.focus()
         }
         
-        // Use a single method to trigger print
-        if (printWindow.document.readyState === "complete") {
-          // Document already loaded, print immediately
-          setTimeout(printOnce, 100)
-        } else {
-          // Wait for document to load
-          printWindow.onload = () => {
-            setTimeout(printOnce, 100)
+        // Handle after print to return focus
+        printWindow.addEventListener("afterprint", () => {
+          window.focus()
+        })
+        
+        // Wait for document to be ready, then print once
+        const checkAndPrint = () => {
+          if (printWindow.document.readyState === "complete") {
+            setTimeout(printOnce, 150)
+          } else {
+            setTimeout(checkAndPrint, 50)
           }
         }
+        
+        // Start checking after a short delay
+        setTimeout(checkAndPrint, 100)
       } else {
         alert("Please allow popups to print the invoice")
       }
