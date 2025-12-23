@@ -14,14 +14,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useInvoice } from "../hooks/useInvoice"
+import { useInvoice, BUSINESS_UNITS } from "../hooks/useInvoice"
 import { ServiceRow } from "./ServiceRow"
 import { InvoicePreview } from "./InvoicePreview"
 import { formatCurrency, convertDateFormat, convertToInputDate } from "../utils/formatters"
 import { generateInvoiceHTML } from "../utils/templateProcessor"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function InvoiceGenerator() {
   const {
+    businessUnit,
+    setBusinessUnit,
     invoiceNumber,
     setInvoiceNumber,
     invoiceDate,
@@ -124,13 +133,28 @@ export function InvoiceGenerator() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2 sm:col-span-2">
+                <div className="space-y-2">
+                  <Label htmlFor="businessUnit">Business Unit</Label>
+                  <Select value={businessUnit} onValueChange={setBusinessUnit}>
+                    <SelectTrigger id="businessUnit" className="w-full">
+                      <SelectValue placeholder="Select Business Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUSINESS_UNITS.map((unit) => (
+                        <SelectItem key={unit.code} value={unit.code}>
+                          {unit.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="invoiceNumber">Invoice Number</Label>
                   <Input
                     id="invoiceNumber"
                     value={invoiceNumber}
                     onChange={(e) => setInvoiceNumber(e.target.value)}
-                    placeholder="STS/2025/001"
+                    placeholder={`STS/${businessUnit}/2025/001`}
                     className="w-full"
                   />
                 </div>

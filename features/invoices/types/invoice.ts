@@ -1,3 +1,5 @@
+export type BusinessUnit = "SD" | "SM" | "BX"
+
 export interface Client {
   name: string
   company?: string
@@ -17,6 +19,7 @@ export interface Service {
 
 export interface Invoice {
   invoiceNumber: string
+  businessUnit: BusinessUnit
   invoiceDate: string // DD/MM/YYYY format
   dueDate?: string // DD/MM/YYYY format
   placeOfSupply: string // default: "Bihar"

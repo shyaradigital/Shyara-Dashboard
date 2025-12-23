@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
-import type { Invoice, Client, Service } from "../types/invoice"
+import { useState, useCallback, useMemo, useRef } from "react"
+import type { Invoice, Client, Service, BusinessUnit } from "../types/invoice"
 import {
   calculateSubtotal,
   calculateTotalDiscount,
@@ -10,16 +10,26 @@ import {
 } from "../utils/calculations"
 import { getTodayDate } from "../utils/formatters"
 
-const generateInvoiceNumber = (): string => {
+const BUSINESS_UNITS = [
+  { code: "SD" as BusinessUnit, name: "Shyara Digital" },
+  { code: "SM" as BusinessUnit, name: "Shyara Marketing" },
+  { code: "BX" as BusinessUnit, name: "BiteX" },
+] as const
+
+const generateInvoiceNumber = (businessUnit: BusinessUnit = "SD"): string => {
   const year = new Date().getFullYear()
   const random = Math.floor(Math.random() * 1000)
     .toString()
     .padStart(3, "0")
-  return `STS/${year}/${random}`
+  return `STS/${businessUnit}/${year}/${random}`
 }
 
 export function useInvoice() {
-  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber())
+  const [businessUnit, setBusinessUnit] = useState<BusinessUnit>("SD")
+  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber("SD"))
+  const [isInvoiceNumberManual, setIsInvoiceNumberManual] = useState(false)
+  const invoiceNumberRef = useRef<string>(generateInvoiceNumber("SD"))
+  
   const [invoiceDate, setInvoiceDate] = useState(getTodayDate())
   const [dueDate, setDueDate] = useState("")
   const [placeOfSupply, setPlaceOfSupply] = useState("Bihar")
@@ -55,6 +65,30 @@ export function useInvoice() {
     () => calculateGrandTotal(subtotal, totalDiscount),
     [subtotal, totalDiscount]
   )
+
+  // Update business unit
+  const handleBusinessUnitChange = useCallback((newBusinessUnit: BusinessUnit) => {
+    setBusinessUnit(newBusinessUnit)
+    // Auto-regenerate invoice number if it wasn't manually edited
+    if (!isInvoiceNumberManual) {
+      const newInvoiceNumber = generateInvoiceNumber(newBusinessUnit)
+      setInvoiceNumber(newInvoiceNumber)
+      invoiceNumberRef.current = newInvoiceNumber
+    }
+  }, [isInvoiceNumberManual])
+
+  // Handle invoice number change
+  const handleInvoiceNumberChange = useCallback((value: string) => {
+    setInvoiceNumber(value)
+    // Check if the value matches the auto-generated format
+    const expectedFormat = `STS/${businessUnit}/${new Date().getFullYear()}/`
+    if (!value.startsWith(expectedFormat)) {
+      setIsInvoiceNumberManual(true)
+    } else {
+      // If it matches the format, it might be auto-generated or manually matching
+      // We'll keep the manual flag as is to be safe
+    }
+  }, [businessUnit])
 
   // Update client fields
   const updateClient = useCallback((field: keyof Client, value: string) => {
@@ -103,6 +137,7 @@ export function useInvoice() {
   const getInvoice = useCallback((): Invoice => {
     return {
       invoiceNumber,
+      businessUnit,
       invoiceDate,
       dueDate: dueDate || undefined,
       placeOfSupply,
@@ -118,6 +153,7 @@ export function useInvoice() {
     }
   }, [
     invoiceNumber,
+    businessUnit,
     invoiceDate,
     dueDate,
     placeOfSupply,
@@ -134,7 +170,10 @@ export function useInvoice() {
 
   // Reset invoice
   const resetInvoice = useCallback(() => {
-    setInvoiceNumber(generateInvoiceNumber())
+    setBusinessUnit("SD")
+    setInvoiceNumber(generateInvoiceNumber("SD"))
+    setIsInvoiceNumberManual(false)
+    invoiceNumberRef.current = generateInvoiceNumber("SD")
     setInvoiceDate(getTodayDate())
     setDueDate("")
     setPlaceOfSupply("Bihar")
@@ -163,8 +202,10 @@ export function useInvoice() {
 
   return {
     // Invoice meta
+    businessUnit,
+    setBusinessUnit: handleBusinessUnitChange,
     invoiceNumber,
-    setInvoiceNumber,
+    setInvoiceNumber: handleInvoiceNumberChange,
     invoiceDate,
     setInvoiceDate,
     dueDate,
@@ -202,4 +243,6 @@ export function useInvoice() {
     resetInvoice,
   }
 }
+
+export { BUSINESS_UNITS }
 
