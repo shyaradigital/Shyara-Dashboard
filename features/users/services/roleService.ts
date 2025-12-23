@@ -61,7 +61,7 @@ export const roleService = {
 
   addRole: async (role: Omit<Role, "name"> & { name: string }): Promise<Role> => {
     // Check if trying to create a built-in role
-    const builtInRoleNames = new Set(Object.values(ROLES) as string[])
+    const builtInRoleNames = new Set(Object.values(ROLES) as unknown as string[])
     if (builtInRoleNames.has(role.name)) {
       throw new Error("Cannot create a built-in role")
     }
@@ -81,7 +81,7 @@ export const roleService = {
 
   updateRole: async (name: string, updates: Partial<Omit<Role, "name">>): Promise<Role | null> => {
     // Prevent updating built-in roles
-    const builtInRoleNames = new Set(Object.values(ROLES) as string[])
+    const builtInRoleNames = new Set(Object.values(ROLES) as unknown as string[])
     if (builtInRoleNames.has(name)) {
       throw new Error("Cannot modify built-in roles")
     }
@@ -110,7 +110,7 @@ export const roleService = {
 
   deleteRole: async (name: string): Promise<boolean> => {
     // Prevent deleting built-in roles
-    const builtInRoleNames = new Set(Object.values(ROLES) as string[])
+    const builtInRoleNames = new Set(Object.values(ROLES) as unknown as string[])
     if (builtInRoleNames.has(name)) {
       throw new Error("Cannot delete built-in roles")
     }

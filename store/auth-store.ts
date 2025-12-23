@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           name: "Local Admin",
           email: "admin@localhost",
           role: ROLES.ADMIN,
-          permissions: ROLE_PERMISSIONS[ROLES.ADMIN] as Permission[],
+          permissions: ROLE_PERMISSIONS[ROLES.ADMIN] as unknown as Permission[],
         }
         set({
           user: mockAdminUser,
@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           name: "Local Admin",
           email: "admin@localhost",
           role: ROLES.ADMIN,
-          permissions: ROLE_PERMISSIONS[ROLES.ADMIN] as Permission[],
+          permissions: ROLE_PERMISSIONS[ROLES.ADMIN] as unknown as Permission[],
         }
 
         // Generate a simple mock token (just a string, won't be validated in local dev)
