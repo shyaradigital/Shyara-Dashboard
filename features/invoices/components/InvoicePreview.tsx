@@ -16,9 +16,10 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
-    if (iframeRef.current) {
+    if (iframeRef.current && containerRef.current) {
       const html = generateInvoiceHTML(invoice)
       const iframe = iframeRef.current
+      const container = containerRef.current
       const doc = iframe.contentDocument || iframe.contentWindow?.document
 
       if (doc) {
@@ -28,61 +29,67 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
         
         // Calculate initial zoom to fit entire invoice
         const calculateInitialZoom = () => {
-          if (containerRef.current && iframe.contentWindow) {
-            // Wait for iframe content to render
-            setTimeout(() => {
-              try {
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document
-                const iframeBody = iframeDoc?.body
-                const iframeHtml = iframeDoc?.documentElement
+          if (!containerRef.current || !iframeRef.current) return
+          
+          const container = containerRef.current
+          const iframe = iframeRef.current
+          const iframeWindow = iframe.contentWindow
+          
+          if (!iframeWindow) return
+          
+          // Wait for iframe content to render
+          setTimeout(() => {
+            try {
+              const iframeDoc = iframe.contentDocument || iframeWindow.document
+              const iframeBody = iframeDoc?.body
+              const iframeHtml = iframeDoc?.documentElement
+              
+              if (iframeBody && iframeHtml && containerRef.current) {
+                const containerWidth = container.clientWidth - 32
+                const containerHeight = container.clientHeight - 32
                 
-                if (iframeBody && iframeHtml) {
-                  const containerWidth = containerRef.current.clientWidth - 32
-                  const containerHeight = containerRef.current.clientHeight - 32
-                  
-                  // Get actual content dimensions
-                  const contentWidth = Math.max(
-                    iframeBody.scrollWidth,
-                    iframeBody.offsetWidth,
-                    iframeHtml.scrollWidth,
-                    iframeHtml.offsetWidth
-                  )
-                  const contentHeight = Math.max(
-                    iframeBody.scrollHeight,
-                    iframeBody.offsetHeight,
-                    iframeHtml.scrollHeight,
-                    iframeHtml.offsetHeight
-                  )
-                  
-                  // Calculate zoom to fit both width and height
-                  const zoomWidth = containerWidth / contentWidth
-                  const zoomHeight = containerHeight / contentHeight
-                  const initialZoom = Math.min(zoomWidth, zoomHeight, 1.2) // Cap at 120%
-                  
-                  if (initialZoom > 0.2) {
-                    setZoom(initialZoom)
-                  }
+                // Get actual content dimensions
+                const contentWidth = Math.max(
+                  iframeBody.scrollWidth,
+                  iframeBody.offsetWidth,
+                  iframeHtml.scrollWidth,
+                  iframeHtml.offsetWidth
+                )
+                const contentHeight = Math.max(
+                  iframeBody.scrollHeight,
+                  iframeBody.offsetHeight,
+                  iframeHtml.scrollHeight,
+                  iframeHtml.offsetHeight
+                )
+                
+                // Calculate zoom to fit both width and height
+                const zoomWidth = containerWidth / contentWidth
+                const zoomHeight = containerHeight / contentHeight
+                const initialZoom = Math.min(zoomWidth, zoomHeight, 1.2) // Cap at 120%
+                
+                if (initialZoom > 0.2) {
+                  setZoom(initialZoom)
                 }
-              } catch (e) {
-                // Fallback to width-based zoom if cross-origin or other error
-                const containerWidth = containerRef.current.clientWidth - 32
+              }
+            } catch (e) {
+              // Fallback to width-based zoom if cross-origin or other error
+              if (containerRef.current) {
+                const containerWidth = container.clientWidth - 32
                 const invoiceWidthPx = 794 // 210mm in pixels
                 const calculatedZoom = Math.min(containerWidth / invoiceWidthPx, 1.2)
                 if (calculatedZoom > 0.3) {
                   setZoom(calculatedZoom)
                 }
               }
-            }, 200)
-          }
+            }
+          }, 200)
         }
         
         // Calculate zoom after content loads
-        if (iframe.contentWindow) {
-          iframe.onload = calculateInitialZoom
-          // Also try immediately in case already loaded
-          if (doc.readyState === "complete") {
-            calculateInitialZoom()
-          }
+        iframe.onload = calculateInitialZoom
+        // Also try immediately in case already loaded
+        if (doc.readyState === "complete") {
+          calculateInitialZoom()
         }
       }
     }
@@ -91,9 +98,10 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   // Recalculate zoom on container resize
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current && iframeRef.current) {
-        const containerWidth = containerRef.current.clientWidth - 32
-        const containerHeight = containerRef.current.clientHeight - 32
+      if (containerRef.current) {
+        const container = containerRef.current
+        const containerWidth = container.clientWidth - 32
+        const containerHeight = container.clientHeight - 32
         const invoiceWidthPx = 794 // 210mm
         const invoiceHeightPx = 1123 // 297mm (A4 height)
         
@@ -139,9 +147,10 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   }
 
   const handleFitToScreen = () => {
-    if (containerRef.current && iframeRef.current) {
-      const containerWidth = containerRef.current.clientWidth - 32
-      const containerHeight = containerRef.current.clientHeight - 32
+    if (containerRef.current) {
+      const container = containerRef.current
+      const containerWidth = container.clientWidth - 32
+      const containerHeight = container.clientHeight - 32
       const invoiceWidthPx = 794 // 210mm
       const invoiceHeightPx = 1123 // 297mm (A4 height)
       
