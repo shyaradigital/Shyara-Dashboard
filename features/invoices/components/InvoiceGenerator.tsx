@@ -386,8 +386,8 @@ export function InvoiceGenerator() {
 
       {/* Preview Modal */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="fixed inset-2 sm:inset-4 md:inset-8 z-50 flex flex-col max-w-[calc(100vw-1rem)] max-h-[calc(100vh-1rem)] sm:max-w-[calc(100vw-2rem)] sm:max-h-[calc(100vh-2rem)] md:max-w-[calc(100vw-4rem)] md:max-h-[calc(100vh-4rem)] w-[calc(100vw-1rem)] h-[calc(100vh-1rem)] sm:w-[calc(100vw-2rem)] sm:h-[calc(100vh-2rem)] md:w-[calc(100vw-4rem)] md:h-[calc(100vh-4rem)] overflow-hidden p-0 m-0 bg-background rounded-lg shadow-lg left-2 top-2 sm:left-4 sm:top-4 md:left-8 md:top-8 translate-x-0 translate-y-0">
-          <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-6 pb-2 flex-shrink-0 border-b">
+        <DialogContent className="flex h-[calc(100vh-1rem)] max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] md:h-[calc(100vh-4rem)] md:max-h-[calc(100vh-4rem)] md:w-[calc(100vw-4rem)] md:max-w-[calc(100vw-4rem)] flex-col gap-0 p-0 sm:rounded-lg">
+          <DialogHeader className="shrink-0 border-b px-4 pb-2 pt-4 sm:px-6 sm:pt-6">
             <DialogTitle>Invoice Preview</DialogTitle>
             <DialogDescription>Preview of your invoice - Use zoom controls to adjust view</DialogDescription>
           </DialogHeader>
