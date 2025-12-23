@@ -21,8 +21,8 @@ const navItems: NavItem[] = [
     permission: "dashboard:view",
   },
   {
-    title: "Invoices",
-    href: "/invoices",
+    title: "Document Generator",
+    href: "/document-generator",
     icon: FileText,
     permission: "invoices:view",
   },

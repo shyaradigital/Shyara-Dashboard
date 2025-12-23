@@ -19,7 +19,7 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false) // Start as false so iframe renders
   const [error, setError] = useState<string | null>(null)
 
   // Calculate available space for zoom calculations
@@ -113,8 +113,72 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
 
   // Load invoice HTML into iframe
   useEffect(() => {
-    if (!iframeRef.current || !containerRef.current) return
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    const rafId = requestAnimationFrame(() => {
+      // #region agent log
+      const logData = {location:'InvoicePreview.tsx:115',message:'useEffect started (after RAF)',data:{hasIframe:!!iframeRef.current,hasContainer:!!containerRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
+      console.log('[DEBUG]', logData);
+      fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
+      // #endregion
+      
+      // Wait for refs to be available (they might not be mounted yet)
+      if (!iframeRef.current || !containerRef.current) {
+      // #region agent log
+      const logData2 = {location:'InvoicePreview.tsx:117',message:'Refs missing, waiting for mount',data:{hasIframe:!!iframeRef.current,hasContainer:!!containerRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
+      console.log('[DEBUG]', logData2);
+      fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData2)}).catch(()=>{});
+      // #endregion
+      
+      // Poll for refs to become available (max 20 attempts, 50ms apart = 1s total)
+      let attempts = 0
+      const maxAttempts = 20
+      const checkInterval = setInterval(() => {
+        attempts++
+        if (iframeRef.current && containerRef.current) {
+          clearInterval(checkInterval)
+          // #region agent log
+          const logData3 = {location:'InvoicePreview.tsx:125',message:'Refs now available, retrying effect',data:{attempts},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
+          console.log('[DEBUG]', logData3);
+          fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData3)}).catch(()=>{});
+          // #endregion
+          // Trigger effect to re-run by updating a dummy state
+          // Actually, we can just call the loading logic directly here
+          // But to keep it clean, let's use a small timeout to let React finish rendering
+          setTimeout(() => {
+            // Force effect to re-run by toggling a state
+            setIsLoading((prev) => !prev)
+            setTimeout(() => setIsLoading((prev) => !prev), 0)
+          }, 0)
+          return
+        }
+        if (attempts >= maxAttempts) {
+          clearInterval(checkInterval)
+          // #region agent log
+          const logData4 = {location:'InvoicePreview.tsx:135',message:'Refs never became available',data:{attempts},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'};
+          console.log('[DEBUG]', logData4);
+          fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData4)}).catch(()=>{});
+          // #endregion
+          setError("Failed to initialize preview - elements not available")
+          setIsLoading(false)
+        }
+      }, 50)
+      
+      return () => {
+        clearInterval(checkInterval)
+      }
+    }
+    
+    // If we get here, refs are available - continue with loading
+    if (!iframeRef.current || !containerRef.current) {
+      return
+    }
 
+    // #region agent log
+    const logData3 = {location:'InvoicePreview.tsx:118',message:'Setting loading to true',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'};
+    console.log('[DEBUG]', logData3);
+    fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData3)}).catch(()=>{});
+    // #endregion
+    
     setIsLoading(true)
     setError(null)
 
@@ -123,35 +187,53 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
     
     // Function to finish loading - always clears loading state
     const finishLoading = () => {
+      // #region agent log
+      const iframe = iframeRef.current
+      const doc = iframe?.contentDocument || iframe?.contentWindow?.document
+      const docBody = doc?.body
+      const docBodyHTML = docBody?.innerHTML?.substring(0, 200) || 'no body'
+      const iframeWidth = iframe?.offsetWidth || 0
+      const iframeHeight = iframe?.offsetHeight || 0
+      const logData4 = {location:'InvoicePreview.tsx:125',message:'finishLoading called',data:{hasIframe:!!iframe,hasDoc:!!doc,hasBody:!!docBody,bodyHTMLPreview:docBodyHTML,iframeWidth,iframeHeight,zoom},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'};
+      console.log('[DEBUG]', logData4);
+      fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData4)}).catch(()=>{});
+      // #endregion
+      
       try {
-        // Try to calculate zoom, but don't let errors prevent loading from clearing
-        const { width: containerWidth, height: containerHeight } = getAvailableSpace()
-        if (containerWidth > 0 && containerHeight > 0) {
-          const { width: contentWidth, height: contentHeight } = getContentDimensions()
-          if (contentWidth > 0 && contentHeight > 0) {
-            const zoomWidth = containerWidth / contentWidth
-            const zoomHeight = containerHeight / contentHeight
-            const calculatedZoom = Math.min(Math.min(zoomWidth, zoomHeight), 2)
-            setZoom(Math.max(calculatedZoom, 0.3))
-          } else {
-            // Fallback to simple fit
-            const calculatedZoom = Math.min(containerWidth / INVOICE_WIDTH_PX, 2)
-            setZoom(Math.max(calculatedZoom, 0.3))
-          }
-        }
+        // Auto-fit content to viewport on initial load
+        // Use a small delay to ensure iframe content is fully rendered
+        setTimeout(() => {
+          handleFitToScreenEnhanced()
+        }, 100)
       } catch (e) {
         console.error("Error calculating zoom:", e)
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:143',message:'Error in finishLoading zoom calc',data:{error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         // Set a default zoom
         setZoom(1)
       } finally {
+        // #region agent log
+        const logData5 = {location:'InvoicePreview.tsx:147',message:'Calling setIsLoading(false)',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'};
+        console.log('[DEBUG]', logData5);
+        fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData5)}).catch(()=>{});
+        // #endregion
         setIsLoading(false)
+        console.log('[DEBUG] setIsLoading(false) executed');
       }
     }
 
     try {
       const doc = iframe.contentDocument || iframe.contentWindow?.document
       
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:152',message:'Got iframe document',data:{hasDoc:!!doc,readyState:doc?.readyState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      
       if (!doc) {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:155',message:'No document access',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         setError("Failed to access iframe document")
         setIsLoading(false)
         return
@@ -162,47 +244,130 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
       doc.write(html)
       doc.close()
 
-      // When writing directly with doc.write(), the onload event may not fire reliably
-      // So we use a combination of approaches:
-      
-      // 1. Immediate check if already complete
-      if (doc.readyState === "complete") {
-        setTimeout(finishLoading, 300)
-      } else {
-        // 2. Poll for readyState
-        let pollCount = 0
-        const maxPolls = 40 // 2 seconds max (40 * 50ms)
-        const pollInterval = setInterval(() => {
-          pollCount++
-          try {
-            const checkDoc = iframe.contentDocument || iframe.contentWindow?.document
-            if (checkDoc && checkDoc.readyState === "complete") {
-              clearInterval(pollInterval)
-              finishLoading()
-            } else if (pollCount >= maxPolls) {
-              // Max polls reached, finish anyway
-              clearInterval(pollInterval)
-              finishLoading()
-            }
-          } catch (e) {
-            // Can't check, finish anyway
-            clearInterval(pollInterval)
-            finishLoading()
-          }
-        }, 50)
-      }
+      // #region agent log
+      const htmlLength = html.length
+      const docBody = doc.body
+      const docBodyHTML = docBody?.innerHTML?.substring(0, 200) || 'no body'
+      const iframeWidth = iframe.offsetWidth
+      const iframeHeight = iframe.offsetHeight
+      const iframeDisplay = window.getComputedStyle(iframe).display
+      const iframeVisibility = window.getComputedStyle(iframe).visibility
+      const iframeComputedHeight = window.getComputedStyle(iframe).height
+      const wrapperWidth = wrapperRef.current?.offsetWidth || 0
+      const wrapperHeight = wrapperRef.current?.offsetHeight || 0
+      const containerWidth = containerRef.current?.offsetWidth || 0
+      const containerHeight = containerRef.current?.offsetHeight || 0
+      fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:163',message:'Content written to iframe',data:{readyState:doc.readyState,htmlLength,hasBody:!!docBody,bodyHTMLPreview:docBodyHTML,iframeWidth,iframeHeight,iframeDisplay,iframeVisibility,iframeComputedHeight,wrapperWidth,wrapperHeight,containerWidth,containerHeight,zoom},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      console.log('[DEBUG] Content written - HTML length:', htmlLength, 'Body exists:', !!docBody, 'Iframe size:', iframeWidth, 'x', iframeHeight, 'Computed height:', iframeComputedHeight, 'Wrapper:', wrapperWidth, 'x', wrapperHeight, 'Container:', containerWidth, 'x', containerHeight, 'Zoom:', zoom);
+      // #endregion
 
-      // 3. Absolute fallback - always finish after 1.5 seconds
-      setTimeout(() => {
+      // 3. Absolute fallback - always finish after 1.5 seconds (set this up first)
+      // #region agent log
+      const logData6 = {location:'InvoicePreview.tsx:202',message:'Setting absolute fallback timeout',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'};
+      console.log('[DEBUG]', logData6);
+      fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData6)}).catch(()=>{});
+      // #endregion
+      const fallbackTimeout = setTimeout(() => {
+        // #region agent log
+        const logData7 = {location:'InvoicePreview.tsx:204',message:'Absolute fallback timeout executing',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'};
+        console.log('[DEBUG]', logData7);
+        fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData7)}).catch(()=>{});
+        // #endregion
         finishLoading()
       }, 1500)
 
+      // When writing directly with doc.write(), the onload event may not fire reliably
+      // So we use a combination of approaches:
+      
+      let pollInterval: ReturnType<typeof setInterval> | null = null
+      
+      // 1. Immediate check if already complete
+      if (doc.readyState === "complete") {
+        // #region agent log
+        const logCompletePath = {location:'InvoicePreview.tsx:170',message:'Document already complete, scheduling finishLoading',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'};
+        console.log('[DEBUG]', logCompletePath);
+        fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logCompletePath)}).catch(()=>{});
+        // #endregion
+        const readyTimeout = setTimeout(() => {
+          // #region agent log
+          const logReadyTimeout = {location:'InvoicePreview.tsx:172',message:'Timeout callback executing (readyState complete path)',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'};
+          console.log('[DEBUG]', logReadyTimeout);
+          fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logReadyTimeout)}).catch(()=>{});
+          // #endregion
+          finishLoading()
+        }, 300)
+        
+        // Cleanup for readyState complete path
+        return () => {
+          console.log('[DEBUG] useEffect cleanup - clearing timeouts (readyState complete path)');
+          clearTimeout(readyTimeout)
+          clearTimeout(fallbackTimeout)
+        }
+      } else {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:175',message:'Document not complete, starting polling',data:{readyState:doc.readyState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+        // 2. Poll for readyState
+        let pollCount = 0
+        const maxPolls = 40 // 2 seconds max (40 * 50ms)
+        pollInterval = setInterval(() => {
+          pollCount++
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:180',message:'Polling interval tick',data:{pollCount,readyState:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
+          try {
+            const checkDoc = iframe.contentDocument || iframe.contentWindow?.document
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:183',message:'Polling check',data:{pollCount,hasDoc:!!checkDoc,readyState:checkDoc?.readyState},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            if (checkDoc && checkDoc.readyState === "complete") {
+              // #region agent log
+              fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:185',message:'ReadyState complete, clearing interval',data:{pollCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+              // #endregion
+              if (pollInterval) clearInterval(pollInterval)
+              finishLoading()
+            } else if (pollCount >= maxPolls) {
+              // #region agent log
+              fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:189',message:'Max polls reached, clearing interval',data:{pollCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+              // #endregion
+              // Max polls reached, finish anyway
+              if (pollInterval) clearInterval(pollInterval)
+              finishLoading()
+            }
+          } catch (e) {
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InvoicePreview.tsx:194',message:'Polling error, clearing interval',data:{error:String(e),pollCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
+            // Can't check, finish anyway
+            if (pollInterval) clearInterval(pollInterval)
+            finishLoading()
+          }
+        }, 50)
+        
+        // Cleanup for polling path
+        return () => {
+          console.log('[DEBUG] useEffect cleanup - clearing polling interval and timeout');
+          if (pollInterval !== null) clearInterval(pollInterval)
+          clearTimeout(fallbackTimeout)
+        }
+      }
+
     } catch (e) {
+      // #region agent log
+      const logData8 = {location:'InvoicePreview.tsx:209',message:'Catch block - error in try',data:{error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'};
+      console.log('[DEBUG]', logData8);
+      fetch('http://127.0.0.1:7244/ingest/0e1ddddd-45af-42a9-b241-565b8393ce44',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData8)}).catch(()=>{});
+      // #endregion
       console.error("Error loading invoice preview:", e)
       setError("Failed to load invoice preview")
       setIsLoading(false)
     }
-  }, [invoice, getAvailableSpace, getContentDimensions])
+    })
+    
+    return () => {
+      cancelAnimationFrame(rafId)
+    }
+  }, [invoice, handleFitToScreenEnhanced]) // Added handleFitToScreenEnhanced to dependencies
 
   // Recalculate zoom on container resize (debounced)
   // Note: We don't auto-adjust zoom on resize to respect user's manual zoom preferences
@@ -279,9 +444,12 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
   // Calculate wrapper dimensions based on zoom
   const wrapperStyle = useMemo(() => {
     const scaledWidth = INVOICE_WIDTH_PX * zoom
+    const scaledHeight = INVOICE_HEIGHT_PX * zoom
     return {
       width: `${scaledWidth}px`,
       minWidth: `${scaledWidth}px`,
+      height: `${scaledHeight}px`,
+      minHeight: `${scaledHeight}px`,
     }
   }, [zoom])
 
@@ -290,12 +458,14 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
     return {
       width: `${INVOICE_WIDTH_PX}px`,
       minWidth: `${INVOICE_WIDTH_PX}px`,
-      height: "auto",
+      height: `${INVOICE_HEIGHT_PX}px`,
       minHeight: `${INVOICE_HEIGHT_PX}px`,
       transform: `scale(${zoom})`,
       transformOrigin: "top left",
       display: "block",
       border: "none",
+      visibility: "visible",
+      opacity: 1,
     }
   }, [zoom])
 
@@ -336,7 +506,7 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
         )}
 
         {!isLoading && !error && (
-          <div className="flex min-h-full items-start justify-center p-4">
+          <div className="flex items-start justify-center p-4">
             <div
               ref={wrapperRef}
               className="relative"
@@ -345,8 +515,8 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
               <iframe
                 ref={iframeRef}
                 title="Invoice Preview"
-                sandbox="allow-same-origin"
-                scrolling="no"
+                sandbox="allow-same-origin allow-scripts"
+                scrolling="auto"
                 style={iframeStyle}
                 className="bg-white"
               />

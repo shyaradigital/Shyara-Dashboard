@@ -26,6 +26,7 @@ model User {
   // Relations
   incomes   Income[]
   expenses  Expense[]
+  documents Document[]
 
   @@map("users")
 }
@@ -80,5 +81,51 @@ model Expense {
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("expenses")
+}
+
+enum DocumentType {
+  INVOICE
+  QUOTATION
+}
+
+enum DocumentStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Document {
+  id            String         @id @default(cuid())
+  documentType  DocumentType  @default(INVOICE)
+  documentNumber String        // e.g., "STS/SD/2025/1611"
+  businessUnit  String         // SD, SM, BX
+  invoiceDate   DateTime
+  dueDate       DateTime?
+  placeOfSupply String?
+  currency      String         @default("INR (₹)")
+  client        Json           // Client object as JSON
+  services      Json           // Services array as JSON
+  poRef         String?
+  paymentTerms  String?
+  notes         String?
+  subtotal      Float
+  totalDiscount Float          @default(0)
+  grandTotal    Float
+  status        DocumentStatus @default(DRAFT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  userId        String?
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([documentType, businessUnit, documentNumber])
+  @@index([businessUnit])
+  @@index([documentType])
+  @@index([status])
+  @@index([invoiceDate])
+  @@map("documents")
 }
 

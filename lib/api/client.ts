@@ -4,6 +4,12 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://shyara-dashboard.onrender.com/api";
 
+// Check if running in local development
+const isLocalDevelopment = () => {
+  if (typeof window === "undefined") return false;
+  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+};
+
 // Create axios instance
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -30,6 +36,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
+    // In local development, suppress CORS and network errors (backend not available)
+    if (isLocalDevelopment() && (error.code === "ERR_NETWORK" || error.message === "Network Error")) {
+      // Don't log CORS errors in local dev - they're expected when backend is not running
+      // Return a rejected promise with a special flag so services can handle it
+      return Promise.reject({ ...error, isLocalDevError: true });
+    }
+
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
       clearToken();

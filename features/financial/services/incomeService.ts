@@ -1,5 +1,26 @@
-import type { Income, IncomeFilters, IncomeSummary } from "../types/income"
+import type { Income, IncomeFilters, IncomeSummary, IncomeCategory } from "../types/income"
 import { incomeApi, type IncomeResponse } from "@/lib/api/financial"
+
+// Create empty category record
+const createEmptyIncomeCategoryRecord = (): Record<IncomeCategory, number> => ({
+  SMM: 0,
+  Website: 0,
+  Ads: 0,
+  POS: 0,
+  Consultation: 0,
+  Freelancing: 0,
+  "Wedding Video Invitation": 0,
+  "Engagement Video Invitation": 0,
+  "Wedding Card Invitation": 0,
+  "Engagement Card Invitation": 0,
+  "Anniversary Card Invitation": 0,
+  "Anniversary Video Invitation": 0,
+  "Birthday Wish Video": 0,
+  "Birthday Wish Card": 0,
+  "Birthday Video Invitation": 0,
+  "Birthday Card Invitation": 0,
+  Other: 0,
+});
 
 // Convert API response to app Income type
 const mapIncomeResponse = (response: IncomeResponse): Income => {
@@ -27,7 +48,13 @@ export const incomeService = {
     try {
       const incomes = await incomeApi.getAll(filters)
       return incomes.map(mapIncomeResponse)
-    } catch (error) {
+    } catch (error: any) {
+      // In local dev, return empty array instead of throwing
+      if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+        if (error?.isLocalDevError || error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
+          return [];
+        }
+      }
       console.error("Error fetching incomes:", error)
       throw error
     }
@@ -90,7 +117,19 @@ export const incomeService = {
   getSummary: async (filters?: IncomeFilters): Promise<IncomeSummary> => {
     try {
       return await incomeApi.getSummary(filters)
-    } catch (error) {
+    } catch (error: any) {
+      // In local dev, return empty summary instead of throwing
+      if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+        if (error?.isLocalDevError || error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
+          return {
+            total: 0,
+            monthly: 0,
+            quarterly: 0,
+            yearly: 0,
+            byCategory: createEmptyIncomeCategoryRecord(),
+          };
+        }
+      }
       console.error("Error fetching income summary:", error)
       throw error
     }

@@ -1,9 +1,15 @@
 import { create } from "zustand"
 import type { User, Permission } from "@/types"
-import { type Role } from "@/lib/constants"
+import { type Role, ROLES, ROLE_PERMISSIONS } from "@/lib/constants"
 import { authApi } from "@/lib/api/auth"
-import { setToken, clearToken } from "@/lib/api/client"
+import { setToken, clearToken, getToken } from "@/lib/api/client"
 import type { AxiosError } from "axios"
+
+// Local development bypass - only works on localhost
+const isLocalDevelopment = () => {
+  if (typeof window === "undefined") return false
+  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+}
 
 interface AuthStore extends AuthState {
   authenticate: (
@@ -32,6 +38,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   initializeAuth: async () => {
     // Check if we have a token and validate it
     try {
+      // Check for local dev token first
+      const token = getToken()
+      if (isLocalDevelopment() && token && token.startsWith("local-dev-token-")) {
+        // Restore local dev admin user
+        const mockAdminUser: User = {
+          id: "local-dev-admin-id",
+          userId: "admin",
+          name: "Local Admin",
+          email: "admin@localhost",
+          role: ROLES.ADMIN,
+          permissions: ROLE_PERMISSIONS[ROLES.ADMIN] as Permission[],
+        }
+        set({
+          user: mockAdminUser,
+          isAuthenticated: true,
+          isLoading: false,
+        })
+        return
+      }
+
+      // Normal flow - validate with backend
       const user = await authApi.getMe()
       set({
         user: {
@@ -62,6 +89,35 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return { success: false, error: "Email/user ID and password are required" }
       }
 
+      // Local development bypass - only works on localhost
+      if (isLocalDevelopment() && identifier.trim().toLowerCase() === "admin" && password === "admin") {
+        // Create mock admin user for local development
+        const mockAdminUser: User = {
+          id: "local-dev-admin-id",
+          userId: "admin",
+          name: "Local Admin",
+          email: "admin@localhost",
+          role: ROLES.ADMIN,
+          permissions: ROLE_PERMISSIONS[ROLES.ADMIN] as Permission[],
+        }
+
+        // Generate a simple mock token (just a string, won't be validated in local dev)
+        const mockToken = "local-dev-token-" + Date.now()
+
+        // Store mock token
+        setToken(mockToken, rememberMe)
+
+        // Set user in store
+        set({
+          user: mockAdminUser,
+          isAuthenticated: true,
+          isLoading: false,
+        })
+
+        return { success: true }
+      }
+
+      // Normal authentication flow for production/backend
       const response = await authApi.login({
         identifier: identifier.trim(),
         password,

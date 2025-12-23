@@ -1,6 +1,11 @@
 export { InvoiceGenerator } from "./components/InvoiceGenerator"
 export { InvoicePreview } from "./components/InvoicePreview"
 export { ServiceRow } from "./components/ServiceRow"
+export { InvoiceList } from "./components/InvoiceList"
+export { InvoiceListRow } from "./components/InvoiceListRow"
+export { InvoiceStats } from "./components/InvoiceStats"
 export { useInvoice, BUSINESS_UNITS } from "./hooks/useInvoice"
+export { useInvoices } from "./hooks/useInvoices"
+export { useInvoiceStats } from "./hooks/useInvoiceStats"
 export type { Invoice, Client, Service, BusinessUnit } from "./types/invoice"
 

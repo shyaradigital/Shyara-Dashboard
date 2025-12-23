@@ -1,11 +1,15 @@
 "use client"
 
-import { InvoiceGenerator } from "@/features/invoices"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function InvoicesPage() {
-  return (
-    <div className="box-border w-full max-w-full space-y-6 overflow-x-hidden pb-8">
-      <InvoiceGenerator />
-    </div>
-  )
+  const router = useRouter()
+  
+  useEffect(() => {
+    // Redirect to new document generator route
+    router.replace("/document-generator/invoices/create")
+  }, [router])
+
+  return null
 }

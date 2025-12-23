@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo, useRef } from "react"
+import { useState, useCallback, useMemo, useRef, useEffect } from "react"
 import type { Invoice, Client, Service, BusinessUnit } from "../types/invoice"
 import {
   calculateSubtotal,
@@ -9,6 +9,7 @@ import {
   recalculateService,
 } from "../utils/calculations"
 import { getTodayDate } from "../utils/formatters"
+import { invoiceService } from "../services/invoiceService"
 
 const BUSINESS_UNITS = [
   { code: "SD" as BusinessUnit, name: "Shyara Digital" },
@@ -16,6 +17,7 @@ const BUSINESS_UNITS = [
   { code: "BX" as BusinessUnit, name: "BiteX" },
 ] as const
 
+// Fallback function for local dev or when API is unavailable
 const generateInvoiceNumber = (businessUnit: BusinessUnit = "SD"): string => {
   const year = new Date().getFullYear()
   const random = Math.floor(Math.random() * 1000)
@@ -26,9 +28,10 @@ const generateInvoiceNumber = (businessUnit: BusinessUnit = "SD"): string => {
 
 export function useInvoice() {
   const [businessUnit, setBusinessUnit] = useState<BusinessUnit>("SD")
-  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber("SD"))
+  const [invoiceNumber, setInvoiceNumber] = useState("")
   const [isInvoiceNumberManual, setIsInvoiceNumberManual] = useState(false)
-  const invoiceNumberRef = useRef<string>(generateInvoiceNumber("SD"))
+  const [isLoadingInvoiceNumber, setIsLoadingInvoiceNumber] = useState(false)
+  const invoiceNumberRef = useRef<string>("")
   
   const [invoiceDate, setInvoiceDate] = useState(getTodayDate())
   const [dueDate, setDueDate] = useState("")
@@ -79,16 +82,37 @@ export function useInvoice() {
     }
   }, [businessUnit])
 
+  // Fetch next invoice number from backend
+  const fetchNextInvoiceNumber = useCallback(async (unit: BusinessUnit) => {
+    try {
+      setIsLoadingInvoiceNumber(true)
+      const nextNumber = await invoiceService.getNextInvoiceNumber(unit)
+      setInvoiceNumber(nextNumber)
+      invoiceNumberRef.current = nextNumber
+    } catch (error) {
+      // Fallback to local generation if API fails
+      const fallbackNumber = generateInvoiceNumber(unit)
+      setInvoiceNumber(fallbackNumber)
+      invoiceNumberRef.current = fallbackNumber
+    } finally {
+      setIsLoadingInvoiceNumber(false)
+    }
+  }, [])
+
+  // Fetch invoice number on mount
+  useEffect(() => {
+    fetchNextInvoiceNumber(businessUnit)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only on mount
+
   // Update business unit
   const handleBusinessUnitChange = useCallback((newBusinessUnit: BusinessUnit) => {
     setBusinessUnit(newBusinessUnit)
     // Auto-regenerate invoice number if it wasn't manually edited
     if (!isInvoiceNumberManual) {
-      const newInvoiceNumber = generateInvoiceNumber(newBusinessUnit)
-      setInvoiceNumber(newInvoiceNumber)
-      invoiceNumberRef.current = newInvoiceNumber
+      fetchNextInvoiceNumber(newBusinessUnit)
     }
-  }, [isInvoiceNumberManual])
+  }, [isInvoiceNumberManual, fetchNextInvoiceNumber])
 
   // Update client fields
   const updateClient = useCallback((field: keyof Client, value: string) => {
@@ -171,9 +195,8 @@ export function useInvoice() {
   // Reset invoice
   const resetInvoice = useCallback(() => {
     setBusinessUnit("SD")
-    setInvoiceNumber(generateInvoiceNumber("SD"))
     setIsInvoiceNumberManual(false)
-    invoiceNumberRef.current = generateInvoiceNumber("SD")
+    fetchNextInvoiceNumber("SD")
     setInvoiceDate(getTodayDate())
     setDueDate("")
     setPlaceOfSupply("Bihar")
@@ -206,6 +229,7 @@ export function useInvoice() {
     setBusinessUnit: handleBusinessUnitChange,
     invoiceNumber,
     setInvoiceNumber: handleInvoiceNumberChange,
+    isLoadingInvoiceNumber,
     invoiceDate,
     setInvoiceDate,
     dueDate,

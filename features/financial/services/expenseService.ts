@@ -1,5 +1,17 @@
-import type { Expense, ExpenseFilters, ExpenseSummary } from "../types/expense"
+import type { Expense, ExpenseFilters, ExpenseSummary, ExpenseCategory } from "../types/expense"
 import { expenseApi, type ExpenseResponse } from "@/lib/api/financial"
+
+// Create empty category record
+const createEmptyExpenseCategoryRecord = (): Record<ExpenseCategory, number> => ({
+  Salaries: 0,
+  Subscriptions: 0,
+  Rent: 0,
+  Software: 0,
+  Hardware: 0,
+  Travel: 0,
+  Utilities: 0,
+  Misc: 0,
+});
 
 // Convert API response to app Expense type
 const mapExpenseResponse = (response: ExpenseResponse): Expense => {
@@ -20,7 +32,13 @@ export const expenseService = {
     try {
       const expenses = await expenseApi.getAll(filters)
       return expenses.map(mapExpenseResponse)
-    } catch (error) {
+    } catch (error: any) {
+      // In local dev, return empty array instead of throwing
+      if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+        if (error?.isLocalDevError || error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
+          return [];
+        }
+      }
       console.error("Error fetching expenses:", error)
       throw error
     }
@@ -83,7 +101,19 @@ export const expenseService = {
   getSummary: async (filters?: ExpenseFilters): Promise<ExpenseSummary> => {
     try {
       return await expenseApi.getSummary(filters)
-    } catch (error) {
+    } catch (error: any) {
+      // In local dev, return empty summary instead of throwing
+      if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+        if (error?.isLocalDevError || error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
+          return {
+            total: 0,
+            monthly: 0,
+            quarterly: 0,
+            yearly: 0,
+            byCategory: createEmptyExpenseCategoryRecord(),
+          };
+        }
+      }
       console.error("Error fetching expense summary:", error)
       throw error
     }

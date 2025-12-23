@@ -1,22 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { Eye, Plus, Printer } from "lucide-react"
+import { Plus, Printer, Save, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useInvoice, BUSINESS_UNITS } from "../hooks/useInvoice"
 import { ServiceRow } from "./ServiceRow"
-import { InvoicePreview } from "./InvoicePreview"
 import { formatCurrency, convertDateFormat, convertToInputDate } from "../utils/formatters"
 import { generateInvoiceHTML } from "../utils/templateProcessor"
 import {
@@ -26,8 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { invoiceService } from "../services/invoiceService"
+import { toast } from "@/lib/utils/toast"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 export function InvoiceGenerator() {
+  const router = useRouter()
+  const [isSaving, setIsSaving] = useState(false)
   const {
     businessUnit,
     setBusinessUnit,
@@ -56,9 +53,34 @@ export function InvoiceGenerator() {
     totalDiscount,
     grandTotal,
     getInvoice,
+    isLoadingInvoiceNumber,
   } = useInvoice()
 
-  const [showPreview, setShowPreview] = useState(false)
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      const invoice = getInvoice()
+
+      // Validate required fields
+      if (!invoice.client.name) {
+        toast.error("Please enter client name")
+        return
+      }
+
+      if (invoice.services.length === 0 || invoice.services.some((s) => !s.description)) {
+        toast.error("Please add at least one service with description")
+        return
+      }
+
+      await invoiceService.createInvoice(invoice)
+      toast.success("Invoice saved successfully!")
+      router.push("/document-generator/invoices")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save invoice")
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handlePrint = () => {
     try {
@@ -133,13 +155,26 @@ export function InvoiceGenerator() {
           <p className="text-xs text-muted-foreground sm:text-sm">Fill in the details to create an invoice</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button variant="outline" onClick={() => setShowPreview(true)} className="w-full sm:w-auto">
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || isLoadingInvoiceNumber}
+            className="w-full sm:w-auto"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Invoice
+              </>
+            )}
           </Button>
-          <Button onClick={handlePrint} className="w-full sm:w-auto">
+          <Button onClick={handlePrint} variant="outline" className="w-full sm:w-auto">
             <Printer className="mr-2 h-4 w-4" />
-            Print
+            Print Invoice
           </Button>
         </div>
       </div>
@@ -169,13 +204,19 @@ export function InvoiceGenerator() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="invoiceNumber">Invoice Number</Label>
-                  <Input
-                    id="invoiceNumber"
-                    value={invoiceNumber}
-                    onChange={(e) => setInvoiceNumber(e.target.value)}
-                    placeholder={`STS/${businessUnit}/2025/001`}
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="invoiceNumber"
+                      value={invoiceNumber}
+                      onChange={(e) => setInvoiceNumber(e.target.value)}
+                      placeholder={`STS/${businessUnit}/2025/1611`}
+                      className="w-full"
+                      disabled={isLoadingInvoiceNumber}
+                    />
+                    {isLoadingInvoiceNumber && (
+                      <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="invoiceDate">Invoice Date</Label>
@@ -384,18 +425,6 @@ export function InvoiceGenerator() {
           </Card>
       </div>
 
-      {/* Preview Modal */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="flex h-[calc(100vh-1rem)] max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] md:h-[calc(100vh-4rem)] md:max-h-[calc(100vh-4rem)] md:w-[calc(100vw-4rem)] md:max-w-[calc(100vw-4rem)] flex-col gap-0 p-0 sm:rounded-lg left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
-          <DialogHeader className="shrink-0 border-b px-4 pb-2 pt-4 sm:px-6 sm:pt-6">
-            <DialogTitle>Invoice Preview</DialogTitle>
-            <DialogDescription>Preview of your invoice - Use zoom controls to adjust view</DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <InvoicePreview invoice={getInvoice()} onPrint={handlePrint} />
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
