@@ -122,7 +122,9 @@ export function InvoiceListRow({ invoice, onDelete }: InvoiceListRowProps) {
     }
   }
 
-  const clientName = invoice.client?.name || "N/A"
+  const clientName = (invoice.client && typeof invoice.client === "object" && "name" in invoice.client)
+    ? String(invoice.client.name)
+    : "N/A"
   const invoiceDate = invoice.invoiceDate
     ? convertDateFormat(new Date(invoice.invoiceDate).toISOString().split("T")[0])
     : "N/A"
