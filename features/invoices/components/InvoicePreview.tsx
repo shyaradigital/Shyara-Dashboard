@@ -113,58 +113,75 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
 
   // Load invoice HTML into iframe
   useEffect(() => {
-    if (iframeRef.current && containerRef.current) {
-      setIsLoading(true)
-      setError(null)
+    if (!iframeRef.current || !containerRef.current) return
 
-      const html = generateInvoiceHTML(invoice)
-      const iframe = iframeRef.current
+    setIsLoading(true)
+    setError(null)
+
+    const html = generateInvoiceHTML(invoice)
+    const iframe = iframeRef.current
+    
+    try {
       const doc = iframe.contentDocument || iframe.contentWindow?.document
-
-      if (doc) {
-        try {
-          doc.open()
-          doc.write(html)
-          doc.close()
-
-          // Calculate initial zoom after content loads
-          const calculateInitialZoom = () => {
-            // Wait for iframe content to fully render
-            setTimeout(() => {
-              try {
-                handleFitToScreenEnhanced()
-                setIsLoading(false)
-              } catch (e) {
-                setError("Failed to render invoice preview")
-                setIsLoading(false)
-              }
-            }, 300)
-          }
-
-          // Calculate zoom after content loads
-          iframe.onload = calculateInitialZoom
-          // Also try immediately in case already loaded
-          if (doc.readyState === "complete") {
-            calculateInitialZoom()
-          } else {
-            // Fallback timeout
-            setTimeout(() => {
-              if (isLoading) {
-                handleFitToScreenEnhanced()
-                setIsLoading(false)
-              }
-            }, 1000)
-          }
-        } catch (e) {
-          setError("Failed to load invoice preview")
-          setIsLoading(false)
-        }
-      } else {
+      
+      if (!doc) {
         setError("Failed to access iframe document")
         setIsLoading(false)
+        return
       }
+
+      // Write content to iframe
+      doc.open()
+      doc.write(html)
+      doc.close()
+
+      // Function to finish loading
+      const finishLoading = () => {
+        try {
+          handleFitToScreenEnhanced()
+        } catch (e) {
+          console.error("Error calculating zoom:", e)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+
+      // Set up iframe load handler
+      iframe.onload = () => {
+        setTimeout(finishLoading, 200)
+      }
+
+      // Check if already loaded
+      if (doc.readyState === "complete") {
+        setTimeout(finishLoading, 200)
+      } else {
+        // Wait for load event
+        const checkInterval = setInterval(() => {
+          try {
+            const checkDoc = iframe.contentDocument || iframe.contentWindow?.document
+            if (checkDoc && checkDoc.readyState === "complete") {
+              clearInterval(checkInterval)
+              finishLoading()
+            }
+          } catch (e) {
+            // Can't check, use fallback
+            clearInterval(checkInterval)
+            setTimeout(finishLoading, 500)
+          }
+        }, 50)
+
+        // Fallback: always finish after max 2 seconds
+        setTimeout(() => {
+          clearInterval(checkInterval)
+          finishLoading()
+        }, 2000)
+      }
+    } catch (e) {
+      console.error("Error loading invoice preview:", e)
+      setError("Failed to load invoice preview")
+      setIsLoading(false)
     }
-  }, [invoice, handleFitToScreenEnhanced, isLoading])
+  }, [invoice, handleFitToScreenEnhanced])
 
   // Recalculate zoom on container resize (debounced)
   // Note: We don't auto-adjust zoom on resize to respect user's manual zoom preferences
