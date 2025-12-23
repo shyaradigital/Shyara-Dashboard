@@ -9,6 +9,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import {
+  TableRow,
+  TableCell,
+} from "@/components/ui/table"
 import { MoreVertical, Trash2, Printer } from "lucide-react"
 import type { InvoiceResponse } from "@/lib/api/invoices"
 import { generateInvoiceHTML } from "../utils/templateProcessor"

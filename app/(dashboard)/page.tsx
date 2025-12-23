@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DollarSign,
@@ -20,7 +20,6 @@ import { RevenueCharts } from "@/features/financial/components/RevenueCharts"
 import { BalanceSheetView } from "@/features/financial/components/BalanceSheetView"
 import { CategoryBreakdown } from "@/features/financial/components/CategoryBreakdown"
 import { DuesSection } from "@/features/financial/components/DuesSection"
-import { incomeService } from "@/features/financial/services/incomeService"
 import {
   Table,
   TableBody,

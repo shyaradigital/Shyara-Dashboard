@@ -18,8 +18,8 @@ export interface InvoiceResponse {
   dueDate?: string;
   placeOfSupply?: string;
   currency: string;
-  client: any;
-  services: any[];
+  client: Record<string, unknown>;
+  services: Array<Record<string, unknown>>;
   poRef?: string;
   paymentTerms?: string;
   notes?: string;
@@ -121,7 +121,7 @@ export const invoiceApi = {
    * Update an invoice
    */
   async updateInvoice(id: string, invoice: Partial<Invoice>): Promise<InvoiceResponse> {
-    const payload: any = {};
+    const payload: Record<string, unknown> = {};
     if (invoice.invoiceNumber !== undefined) payload.invoiceNumber = invoice.invoiceNumber;
     if (invoice.businessUnit !== undefined) payload.businessUnit = invoice.businessUnit;
     if (invoice.invoiceDate !== undefined) payload.invoiceDate = convertDateToISO(invoice.invoiceDate);
