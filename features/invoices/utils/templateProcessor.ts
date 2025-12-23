@@ -365,7 +365,7 @@ export function generateInvoiceHTML(invoice: Invoice): string {
     }
 
     .sigline{
-      margin-top: 28px;
+      margin-top: 40px;
       border-top: 1px solid var(--line);
       padding-top: 10px;
       color: var(--ink);
