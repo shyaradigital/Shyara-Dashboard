@@ -386,7 +386,7 @@ export function InvoiceGenerator() {
 
       {/* Preview Modal */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="flex h-[calc(100vh-1rem)] max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] md:h-[calc(100vh-4rem)] md:max-h-[calc(100vh-4rem)] md:w-[calc(100vw-4rem)] md:max-w-[calc(100vw-4rem)] flex-col gap-0 p-0 sm:rounded-lg">
+        <DialogContent className="flex h-[calc(100vh-1rem)] max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] md:h-[calc(100vh-4rem)] md:max-h-[calc(100vh-4rem)] md:w-[calc(100vw-4rem)] md:max-w-[calc(100vw-4rem)] flex-col gap-0 p-0 sm:rounded-lg left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
           <DialogHeader className="shrink-0 border-b px-4 pb-2 pt-4 sm:px-6 sm:pt-6">
             <DialogTitle>Invoice Preview</DialogTitle>
             <DialogDescription>Preview of your invoice - Use zoom controls to adjust view</DialogDescription>
