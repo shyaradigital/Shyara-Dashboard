@@ -88,7 +88,7 @@ export function useInvoice() {
       setInvoiceNumber(newInvoiceNumber)
       invoiceNumberRef.current = newInvoiceNumber
     }
-  }, [isInvoiceNumberManual, setInvoiceNumber])
+  }, [isInvoiceNumberManual])
 
   // Update client fields
   const updateClient = useCallback((field: keyof Client, value: string) => {
