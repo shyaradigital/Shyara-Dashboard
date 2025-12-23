@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { ZoomIn, ZoomOut, RotateCw, Maximize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Invoice } from "../types/invoice"
@@ -14,6 +14,81 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(1)
+
+  const handleFitToScreen = useCallback(() => {
+    if (containerRef.current && iframeRef.current) {
+      const container = containerRef.current
+      const iframe = iframeRef.current
+      const iframeWindow = iframe.contentWindow
+      
+      if (!iframeWindow) {
+        // Fallback to fixed dimensions
+        const containerWidth = container.clientWidth - 32
+        const containerHeight = container.clientHeight - 32
+        const invoiceWidthPx = 794 // 210mm
+        const invoiceHeightPx = 1123 // 297mm (A4 height)
+        
+        const zoomWidth = containerWidth / invoiceWidthPx
+        const zoomHeight = containerHeight / invoiceHeightPx
+        const calculatedZoom = Math.min(zoomWidth, zoomHeight, 1.2)
+        
+        if (calculatedZoom > 0.2) {
+          setZoom(calculatedZoom)
+        }
+        return
+      }
+      
+      try {
+        const iframeDoc = iframe.contentDocument || iframeWindow.document
+        const iframeBody = iframeDoc?.body
+        const iframeHtml = iframeDoc?.documentElement
+        
+        if (iframeBody && iframeHtml) {
+          const containerWidth = container.clientWidth - 32
+          const containerHeight = container.clientHeight - 32
+          
+          // Get actual content dimensions
+          const contentWidth = Math.max(
+            iframeBody.scrollWidth,
+            iframeBody.offsetWidth,
+            iframeHtml.scrollWidth,
+            iframeHtml.offsetWidth,
+            794 // Fallback to A4 width
+          )
+          const contentHeight = Math.max(
+            iframeBody.scrollHeight,
+            iframeBody.offsetHeight,
+            iframeHtml.scrollHeight,
+            iframeHtml.offsetHeight,
+            1123 // Fallback to A4 height
+          )
+          
+          // Calculate zoom to fit both width and height
+          const zoomWidth = containerWidth / contentWidth
+          const zoomHeight = containerHeight / contentHeight
+          const calculatedZoom = Math.min(zoomWidth, zoomHeight, 1.2)
+          
+          if (calculatedZoom > 0.2) {
+            setZoom(calculatedZoom)
+          }
+        }
+      } catch (e) {
+        // Fallback to fixed dimensions
+        const containerWidth = container.clientWidth - 32
+        const containerHeight = container.clientHeight - 32
+        const invoiceWidthPx = 794 // 210mm
+        const invoiceHeightPx = 1123 // 297mm (A4 height)
+        
+        const zoomWidth = containerWidth / invoiceWidthPx
+        const zoomHeight = containerHeight / invoiceHeightPx
+        const calculatedZoom = Math.min(zoomWidth, zoomHeight, 1.2)
+        
+        if (calculatedZoom > 0.2) {
+          setZoom(calculatedZoom)
+        }
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (iframeRef.current && containerRef.current) {
@@ -29,60 +104,10 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
         
         // Calculate initial zoom to fit entire invoice
         const calculateInitialZoom = () => {
-          if (!containerRef.current || !iframeRef.current) return
-          
-          const container = containerRef.current
-          const iframe = iframeRef.current
-          const iframeWindow = iframe.contentWindow
-          
-          if (!iframeWindow) return
-          
-          // Wait for iframe content to render
+          // Wait for iframe content to fully render
           setTimeout(() => {
-            try {
-              const iframeDoc = iframe.contentDocument || iframeWindow.document
-              const iframeBody = iframeDoc?.body
-              const iframeHtml = iframeDoc?.documentElement
-              
-              if (iframeBody && iframeHtml && containerRef.current) {
-                const containerWidth = container.clientWidth - 32
-                const containerHeight = container.clientHeight - 32
-                
-                // Get actual content dimensions
-                const contentWidth = Math.max(
-                  iframeBody.scrollWidth,
-                  iframeBody.offsetWidth,
-                  iframeHtml.scrollWidth,
-                  iframeHtml.offsetWidth
-                )
-                const contentHeight = Math.max(
-                  iframeBody.scrollHeight,
-                  iframeBody.offsetHeight,
-                  iframeHtml.scrollHeight,
-                  iframeHtml.offsetHeight
-                )
-                
-                // Calculate zoom to fit both width and height
-                const zoomWidth = containerWidth / contentWidth
-                const zoomHeight = containerHeight / contentHeight
-                const initialZoom = Math.min(zoomWidth, zoomHeight, 1.2) // Cap at 120%
-                
-                if (initialZoom > 0.2) {
-                  setZoom(initialZoom)
-                }
-              }
-            } catch (e) {
-              // Fallback to width-based zoom if cross-origin or other error
-              if (containerRef.current) {
-                const containerWidth = container.clientWidth - 32
-                const invoiceWidthPx = 794 // 210mm in pixels
-                const calculatedZoom = Math.min(containerWidth / invoiceWidthPx, 1.2)
-                if (calculatedZoom > 0.3) {
-                  setZoom(calculatedZoom)
-                }
-              }
-            }
-          }, 200)
+            handleFitToScreen()
+          }, 300)
         }
         
         // Calculate zoom after content loads
@@ -93,26 +118,13 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
         }
       }
     }
-  }, [invoice])
+  }, [invoice, handleFitToScreen])
 
   // Recalculate zoom on container resize
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current) {
-        const container = containerRef.current
-        const containerWidth = container.clientWidth - 32
-        const containerHeight = container.clientHeight - 32
-        const invoiceWidthPx = 794 // 210mm
-        const invoiceHeightPx = 1123 // 297mm (A4 height)
-        
-        const zoomWidth = containerWidth / invoiceWidthPx
-        const zoomHeight = containerHeight / invoiceHeightPx
-        const newZoom = Math.min(zoomWidth, zoomHeight, 1.2)
-        
-        if (newZoom > 0.2) {
-          setZoom(newZoom)
-        }
-      }
+      // Use fit-to-screen to recalculate based on actual content
+      handleFitToScreen()
     }
 
     const resizeObserver = new ResizeObserver(handleResize)
@@ -123,7 +135,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
     return () => {
       resizeObserver.disconnect()
     }
-  }, [])
+  }, [handleFitToScreen])
 
   const handleZoomIn = () => {
     setZoom((prev) => Math.min(prev + 0.1, 2))
@@ -143,24 +155,6 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
       const invoiceWidthPx = 794 // 210mm
       const calculatedZoom = Math.min(containerWidth / invoiceWidthPx, 1.2)
       setZoom(calculatedZoom)
-    }
-  }
-
-  const handleFitToScreen = () => {
-    if (containerRef.current) {
-      const container = containerRef.current
-      const containerWidth = container.clientWidth - 32
-      const containerHeight = container.clientHeight - 32
-      const invoiceWidthPx = 794 // 210mm
-      const invoiceHeightPx = 1123 // 297mm (A4 height)
-      
-      const zoomWidth = containerWidth / invoiceWidthPx
-      const zoomHeight = containerHeight / invoiceHeightPx
-      const calculatedZoom = Math.min(zoomWidth, zoomHeight, 1.2)
-      
-      if (calculatedZoom > 0.2) {
-        setZoom(calculatedZoom)
-      }
     }
   }
 
@@ -236,8 +230,6 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
           style={{
             transform: `scale(${zoom})`,
             transformOrigin: "top left",
-            width: `${100 / zoom}%`,
-            height: `${100 / zoom}%`,
           }}
         >
           <iframe
@@ -247,10 +239,10 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
             sandbox="allow-same-origin"
             scrolling="no"
             style={{
-              width: "210mm",
-              minWidth: "210mm",
+              width: "794px",
+              minWidth: "794px",
               height: "auto",
-              minHeight: "297mm",
+              minHeight: "1123px",
               display: "block",
               border: "none",
               pointerEvents: "auto",
