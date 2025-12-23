@@ -66,17 +66,6 @@ export function useInvoice() {
     [subtotal, totalDiscount]
   )
 
-  // Update business unit
-  const handleBusinessUnitChange = useCallback((newBusinessUnit: BusinessUnit) => {
-    setBusinessUnit(newBusinessUnit)
-    // Auto-regenerate invoice number if it wasn't manually edited
-    if (!isInvoiceNumberManual) {
-      const newInvoiceNumber = generateInvoiceNumber(newBusinessUnit)
-      setInvoiceNumber(newInvoiceNumber)
-      invoiceNumberRef.current = newInvoiceNumber
-    }
-  }, [isInvoiceNumberManual])
-
   // Handle invoice number change
   const handleInvoiceNumberChange = useCallback((value: string) => {
     setInvoiceNumber(value)
@@ -89,6 +78,17 @@ export function useInvoice() {
       // We'll keep the manual flag as is to be safe
     }
   }, [businessUnit])
+
+  // Update business unit
+  const handleBusinessUnitChange = useCallback((newBusinessUnit: BusinessUnit) => {
+    setBusinessUnit(newBusinessUnit)
+    // Auto-regenerate invoice number if it wasn't manually edited
+    if (!isInvoiceNumberManual) {
+      const newInvoiceNumber = generateInvoiceNumber(newBusinessUnit)
+      setInvoiceNumber(newInvoiceNumber)
+      invoiceNumberRef.current = newInvoiceNumber
+    }
+  }, [isInvoiceNumberManual, setInvoiceNumber])
 
   // Update client fields
   const updateClient = useCallback((field: keyof Client, value: string) => {
