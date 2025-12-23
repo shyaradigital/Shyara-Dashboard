@@ -121,6 +121,33 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
     const html = generateInvoiceHTML(invoice)
     const iframe = iframeRef.current
     
+    // Function to finish loading - always clears loading state
+    const finishLoading = () => {
+      try {
+        // Try to calculate zoom, but don't let errors prevent loading from clearing
+        const { width: containerWidth, height: containerHeight } = getAvailableSpace()
+        if (containerWidth > 0 && containerHeight > 0) {
+          const { width: contentWidth, height: contentHeight } = getContentDimensions()
+          if (contentWidth > 0 && contentHeight > 0) {
+            const zoomWidth = containerWidth / contentWidth
+            const zoomHeight = containerHeight / contentHeight
+            const calculatedZoom = Math.min(Math.min(zoomWidth, zoomHeight), 2)
+            setZoom(Math.max(calculatedZoom, 0.3))
+          } else {
+            // Fallback to simple fit
+            const calculatedZoom = Math.min(containerWidth / INVOICE_WIDTH_PX, 2)
+            setZoom(Math.max(calculatedZoom, 0.3))
+          }
+        }
+      } catch (e) {
+        console.error("Error calculating zoom:", e)
+        // Set a default zoom
+        setZoom(1)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     try {
       const doc = iframe.contentDocument || iframe.contentWindow?.document
       
@@ -135,53 +162,47 @@ export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
       doc.write(html)
       doc.close()
 
-      // Function to finish loading
-      const finishLoading = () => {
-        try {
-          handleFitToScreenEnhanced()
-        } catch (e) {
-          console.error("Error calculating zoom:", e)
-        } finally {
-          setIsLoading(false)
-        }
-      }
-
-      // Set up iframe load handler
-      iframe.onload = () => {
-        setTimeout(finishLoading, 200)
-      }
-
-      // Check if already loaded
+      // When writing directly with doc.write(), the onload event may not fire reliably
+      // So we use a combination of approaches:
+      
+      // 1. Immediate check if already complete
       if (doc.readyState === "complete") {
-        setTimeout(finishLoading, 200)
+        setTimeout(finishLoading, 300)
       } else {
-        // Wait for load event
-        const checkInterval = setInterval(() => {
+        // 2. Poll for readyState
+        let pollCount = 0
+        const maxPolls = 40 // 2 seconds max (40 * 50ms)
+        const pollInterval = setInterval(() => {
+          pollCount++
           try {
             const checkDoc = iframe.contentDocument || iframe.contentWindow?.document
             if (checkDoc && checkDoc.readyState === "complete") {
-              clearInterval(checkInterval)
+              clearInterval(pollInterval)
+              finishLoading()
+            } else if (pollCount >= maxPolls) {
+              // Max polls reached, finish anyway
+              clearInterval(pollInterval)
               finishLoading()
             }
           } catch (e) {
-            // Can't check, use fallback
-            clearInterval(checkInterval)
-            setTimeout(finishLoading, 500)
+            // Can't check, finish anyway
+            clearInterval(pollInterval)
+            finishLoading()
           }
         }, 50)
-
-        // Fallback: always finish after max 2 seconds
-        setTimeout(() => {
-          clearInterval(checkInterval)
-          finishLoading()
-        }, 2000)
       }
+
+      // 3. Absolute fallback - always finish after 1.5 seconds
+      setTimeout(() => {
+        finishLoading()
+      }, 1500)
+
     } catch (e) {
       console.error("Error loading invoice preview:", e)
       setError("Failed to load invoice preview")
       setIsLoading(false)
     }
-  }, [invoice, handleFitToScreenEnhanced])
+  }, [invoice, getAvailableSpace, getContentDimensions])
 
   // Recalculate zoom on container resize (debounced)
   // Note: We don't auto-adjust zoom on resize to respect user's manual zoom preferences
