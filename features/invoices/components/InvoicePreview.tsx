@@ -1,133 +1,181 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { ZoomIn, ZoomOut, RotateCw, Maximize2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Loader2 } from "lucide-react"
 import type { Invoice } from "../types/invoice"
 import { generateInvoiceHTML } from "../utils/templateProcessor"
+import { InvoicePreviewToolbar } from "./InvoicePreviewToolbar"
 
 interface InvoicePreviewProps {
   invoice: Invoice
+  onPrint?: () => void
 }
 
-export function InvoicePreview({ invoice }: InvoicePreviewProps) {
+const INVOICE_WIDTH_PX = 794 // 210mm in pixels at 96dpi
+const INVOICE_HEIGHT_PX = 1123 // 297mm (A4 height) in pixels at 96dpi
+
+export function InvoicePreview({ invoice, onPrint }: InvoicePreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleFitToScreen = useCallback(() => {
-    if (containerRef.current && iframeRef.current) {
-      const container = containerRef.current
-      const iframe = iframeRef.current
-      const iframeWindow = iframe.contentWindow
-      
-      if (!iframeWindow) {
-        // Fallback to fixed dimensions
-        const containerWidth = container.clientWidth - 32
-        const containerHeight = container.clientHeight - 32
-        const invoiceWidthPx = 794 // 210mm
-        const invoiceHeightPx = 1123 // 297mm (A4 height)
-        
-        const zoomWidth = containerWidth / invoiceWidthPx
-        const zoomHeight = containerHeight / invoiceHeightPx
-        const calculatedZoom = Math.min(zoomWidth, zoomHeight, 1.2)
-        
-        if (calculatedZoom > 0.2) {
-          setZoom(calculatedZoom)
-        }
-        return
-      }
-      
-      try {
-        const iframeDoc = iframe.contentDocument || iframeWindow.document
-        const iframeBody = iframeDoc?.body
-        const iframeHtml = iframeDoc?.documentElement
-        
-        if (iframeBody && iframeHtml) {
-          const containerWidth = container.clientWidth - 32
-          const containerHeight = container.clientHeight - 32
-          
-          // Get actual content dimensions
-          const contentWidth = Math.max(
-            iframeBody.scrollWidth,
-            iframeBody.offsetWidth,
-            iframeHtml.scrollWidth,
-            iframeHtml.offsetWidth,
-            794 // Fallback to A4 width
-          )
-          const contentHeight = Math.max(
-            iframeBody.scrollHeight,
-            iframeBody.offsetHeight,
-            iframeHtml.scrollHeight,
-            iframeHtml.offsetHeight,
-            1123 // Fallback to A4 height
-          )
-          
-          // Calculate zoom to fit both width and height
-          const zoomWidth = containerWidth / contentWidth
-          const zoomHeight = containerHeight / contentHeight
-          const calculatedZoom = Math.min(zoomWidth, zoomHeight, 1.2)
-          
-          if (calculatedZoom > 0.2) {
-            setZoom(calculatedZoom)
-          }
-        }
-      } catch (e) {
-        // Fallback to fixed dimensions
-        const containerWidth = container.clientWidth - 32
-        const containerHeight = container.clientHeight - 32
-        const invoiceWidthPx = 794 // 210mm
-        const invoiceHeightPx = 1123 // 297mm (A4 height)
-        
-        const zoomWidth = containerWidth / invoiceWidthPx
-        const zoomHeight = containerHeight / invoiceHeightPx
-        const calculatedZoom = Math.min(zoomWidth, zoomHeight, 1.2)
-        
-        if (calculatedZoom > 0.2) {
-          setZoom(calculatedZoom)
-        }
-      }
+  // Calculate available space for zoom calculations
+  const getAvailableSpace = useCallback(() => {
+    if (!containerRef.current) {
+      return { width: 0, height: 0 }
+    }
+    const container = containerRef.current
+    // Account for padding (p-4 = 16px on each side = 32px total)
+    const padding = 32
+    return {
+      width: container.clientWidth - padding,
+      height: container.clientHeight - padding,
     }
   }, [])
 
+  // Fit to width calculation
+  const handleFitToWidth = useCallback(() => {
+    const { width } = getAvailableSpace()
+    if (width > 0) {
+      const calculatedZoom = Math.min(width / INVOICE_WIDTH_PX, 2)
+      setZoom(Math.max(calculatedZoom, 0.3))
+    }
+  }, [getAvailableSpace])
+
+  // Fit to screen calculation (fits both width and height)
+  const handleFitToScreen = useCallback(() => {
+    const { width, height } = getAvailableSpace()
+    if (width > 0 && height > 0) {
+      const zoomWidth = width / INVOICE_WIDTH_PX
+      const zoomHeight = height / INVOICE_HEIGHT_PX
+      const calculatedZoom = Math.min(Math.min(zoomWidth, zoomHeight), 2)
+      setZoom(Math.max(calculatedZoom, 0.3))
+    }
+  }, [getAvailableSpace])
+
+  // Get actual content dimensions from iframe
+  const getContentDimensions = useCallback(() => {
+    if (!iframeRef.current) {
+      return { width: INVOICE_WIDTH_PX, height: INVOICE_HEIGHT_PX }
+    }
+
+    const iframe = iframeRef.current
+    const iframeWindow = iframe.contentWindow
+
+    if (!iframeWindow) {
+      return { width: INVOICE_WIDTH_PX, height: INVOICE_HEIGHT_PX }
+    }
+
+    try {
+      const iframeDoc = iframe.contentDocument || iframeWindow.document
+      const iframeBody = iframeDoc?.body
+      const iframeHtml = iframeDoc?.documentElement
+
+      if (iframeBody && iframeHtml) {
+        const contentWidth = Math.max(
+          iframeBody.scrollWidth,
+          iframeBody.offsetWidth,
+          iframeHtml.scrollWidth,
+          iframeHtml.offsetWidth,
+          INVOICE_WIDTH_PX
+        )
+        const contentHeight = Math.max(
+          iframeBody.scrollHeight,
+          iframeBody.offsetHeight,
+          iframeHtml.scrollHeight,
+          iframeHtml.offsetHeight,
+          INVOICE_HEIGHT_PX
+        )
+        return { width: contentWidth, height: contentHeight }
+      }
+    } catch (e) {
+      // Cross-origin or other error, use fallback
+    }
+
+    return { width: INVOICE_WIDTH_PX, height: INVOICE_HEIGHT_PX }
+  }, [])
+
+  // Enhanced fit to screen using actual content dimensions
+  const handleFitToScreenEnhanced = useCallback(() => {
+    const { width: containerWidth, height: containerHeight } = getAvailableSpace()
+    const { width: contentWidth, height: contentHeight } = getContentDimensions()
+
+    if (containerWidth > 0 && containerHeight > 0 && contentWidth > 0 && contentHeight > 0) {
+      const zoomWidth = containerWidth / contentWidth
+      const zoomHeight = containerHeight / contentHeight
+      const calculatedZoom = Math.min(Math.min(zoomWidth, zoomHeight), 2)
+      setZoom(Math.max(calculatedZoom, 0.3))
+    }
+  }, [getAvailableSpace, getContentDimensions])
+
+  // Load invoice HTML into iframe
   useEffect(() => {
     if (iframeRef.current && containerRef.current) {
+      setIsLoading(true)
+      setError(null)
+
       const html = generateInvoiceHTML(invoice)
       const iframe = iframeRef.current
-      const container = containerRef.current
       const doc = iframe.contentDocument || iframe.contentWindow?.document
 
       if (doc) {
-        doc.open()
-        doc.write(html)
-        doc.close()
-        
-        // Calculate initial zoom to fit entire invoice
-        const calculateInitialZoom = () => {
-          // Wait for iframe content to fully render
-          setTimeout(() => {
-            handleFitToScreen()
-          }, 300)
+        try {
+          doc.open()
+          doc.write(html)
+          doc.close()
+
+          // Calculate initial zoom after content loads
+          const calculateInitialZoom = () => {
+            // Wait for iframe content to fully render
+            setTimeout(() => {
+              try {
+                handleFitToScreenEnhanced()
+                setIsLoading(false)
+              } catch (e) {
+                setError("Failed to render invoice preview")
+                setIsLoading(false)
+              }
+            }, 300)
+          }
+
+          // Calculate zoom after content loads
+          iframe.onload = calculateInitialZoom
+          // Also try immediately in case already loaded
+          if (doc.readyState === "complete") {
+            calculateInitialZoom()
+          } else {
+            // Fallback timeout
+            setTimeout(() => {
+              if (isLoading) {
+                handleFitToScreenEnhanced()
+                setIsLoading(false)
+              }
+            }, 1000)
+          }
+        } catch (e) {
+          setError("Failed to load invoice preview")
+          setIsLoading(false)
         }
-        
-        // Calculate zoom after content loads
-        iframe.onload = calculateInitialZoom
-        // Also try immediately in case already loaded
-        if (doc.readyState === "complete") {
-          calculateInitialZoom()
-        }
+      } else {
+        setError("Failed to access iframe document")
+        setIsLoading(false)
       }
     }
-  }, [invoice, handleFitToScreen])
+  }, [invoice, handleFitToScreenEnhanced, isLoading])
 
-  // Recalculate zoom on container resize
+  // Recalculate zoom on container resize (debounced)
+  // Note: We don't auto-adjust zoom on resize to respect user's manual zoom preferences
   useEffect(() => {
-    const handleResize = () => {
-      // Use fit-to-screen to recalculate based on actual content
-      handleFitToScreen()
-    }
+    // This effect is kept for potential future enhancements
+    // Currently, users can manually adjust zoom and it won't be overridden
+    const resizeObserver = new ResizeObserver(() => {
+      // Container resized - user can manually use fit-to-screen if needed
+      // We don't auto-adjust to respect user's zoom preference
+    })
 
-    const resizeObserver = new ResizeObserver(handleResize)
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current)
     }
@@ -135,122 +183,139 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
     return () => {
       resizeObserver.disconnect()
     }
-  }, [handleFitToScreen])
+  }, [])
 
-  const handleZoomIn = () => {
+  // Zoom handlers
+  const handleZoomIn = useCallback(() => {
     setZoom((prev) => Math.min(prev + 0.1, 2))
-  }
+  }, [])
 
-  const handleZoomOut = () => {
-    setZoom((prev) => Math.max(prev - 0.1, 0.5))
-  }
+  const handleZoomOut = useCallback(() => {
+    setZoom((prev) => Math.max(prev - 0.1, 0.3))
+  }, [])
 
-  const handleResetZoom = () => {
+  const handleResetZoom = useCallback(() => {
     setZoom(1)
-  }
+  }, [])
 
-  const handleFitToWidth = () => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.clientWidth - 32
-      const invoiceWidthPx = 794 // 210mm
-      const calculatedZoom = Math.min(containerWidth / invoiceWidthPx, 1.2)
-      setZoom(calculatedZoom)
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle shortcuts when modal is open and user is not typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable)
+      ) {
+        return
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey
+
+      if (ctrlOrCmd) {
+        if (e.key === "=" || e.key === "+") {
+          e.preventDefault()
+          handleZoomIn()
+        } else if (e.key === "-") {
+          e.preventDefault()
+          handleZoomOut()
+        } else if (e.key === "0") {
+          e.preventDefault()
+          handleResetZoom()
+        } else if (e.key === "p" || e.key === "P") {
+          e.preventDefault()
+          onPrint?.()
+        }
+      } else if (e.key === "Escape") {
+        // Escape is handled by Dialog component, so we don't need to handle it here
+      }
     }
-  }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [handleZoomIn, handleZoomOut, handleResetZoom, onPrint])
+
+  // Calculate wrapper dimensions based on zoom
+  const wrapperStyle = useMemo(() => {
+    const scaledWidth = INVOICE_WIDTH_PX * zoom
+    return {
+      width: `${scaledWidth}px`,
+      minWidth: `${scaledWidth}px`,
+    }
+  }, [zoom])
+
+  // Calculate iframe transform
+  const iframeStyle = useMemo(() => {
+    return {
+      width: `${INVOICE_WIDTH_PX}px`,
+      minWidth: `${INVOICE_WIDTH_PX}px`,
+      height: "auto",
+      minHeight: `${INVOICE_HEIGHT_PX}px`,
+      transform: `scale(${zoom})`,
+      transformOrigin: "top left",
+      display: "block",
+      border: "none",
+    }
+  }, [zoom])
 
   return (
     <div className="flex h-full w-full flex-col">
-      {/* Zoom Controls Toolbar */}
-      <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-2">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleZoomOut}
-            disabled={zoom <= 0.5}
-            className="h-8"
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="min-w-[60px] text-center text-sm font-medium">
-            {Math.round(zoom * 100)}%
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleZoomIn}
-            disabled={zoom >= 2}
-            className="h-8"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleResetZoom}
-            className="h-8"
-          >
-            <RotateCw className="mr-1 h-3 w-3" />
-            Reset
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleFitToWidth}
-            className="h-8"
-          >
-            <Maximize2 className="mr-1 h-3 w-3" />
-            Fit Width
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleFitToScreen}
-            className="h-8"
-          >
-            <Maximize2 className="mr-1 h-3 w-3" />
-            Fit Screen
-          </Button>
-        </div>
-      </div>
+      {/* Toolbar */}
+      <InvoicePreviewToolbar
+        zoom={zoom}
+        onZoomChange={setZoom}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onReset={handleResetZoom}
+        onFitToWidth={handleFitToWidth}
+        onFitToScreen={handleFitToScreenEnhanced}
+        onPrint={onPrint}
+      />
 
-      {/* Preview Container */}
+      {/* Scrollable Content Area */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto overscroll-contain rounded-lg border bg-transparent touch-pan-x touch-pan-y"
-        style={{ minHeight: 0 }}
+        className="flex-1 min-h-0 overflow-auto overscroll-contain bg-muted/20"
       >
-        <div
-          className="inline-block origin-top-left transition-transform duration-200"
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: "top left",
-          }}
-        >
-          <iframe
-            ref={iframeRef}
-            className="border-0"
-            title="Invoice Preview"
-            sandbox="allow-same-origin"
-            scrolling="no"
-            style={{
-              width: "794px",
-              minWidth: "794px",
-              height: "auto",
-              minHeight: "1123px",
-              display: "block",
-              border: "none",
-              pointerEvents: "auto",
-            }}
-          />
-        </div>
+        {isLoading && (
+          <div className="flex h-full items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Rendering invoice...</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex h-full items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !error && (
+          <div className="flex min-h-full items-start justify-center p-4">
+            <div
+              ref={wrapperRef}
+              className="relative"
+              style={wrapperStyle}
+            >
+              <iframe
+                ref={iframeRef}
+                title="Invoice Preview"
+                sandbox="allow-same-origin"
+                scrolling="no"
+                style={iframeStyle}
+                className="bg-white"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
-
