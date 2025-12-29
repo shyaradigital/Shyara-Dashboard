@@ -20,6 +20,8 @@ export const ROLE_PERMISSIONS = {
     "users:delete",
     "roles:manage",
     "auth:reset-password",
+    "journal:view",
+    "journal:edit",
   ],
   [ROLES.MANAGER]: [
     "dashboard:view",

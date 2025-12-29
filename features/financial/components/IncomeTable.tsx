@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -53,6 +53,9 @@ const INCOME_CATEGORIES: IncomeCategory[] = [
   "Other",
 ]
 
+const INITIAL_DISPLAY_COUNT = 5
+const LOAD_MORE_COUNT = 5
+
 export function IncomeTable({
   incomes,
   isLoading,
@@ -65,11 +68,32 @@ export function IncomeTable({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingIncome, setEditingIncome] = useState<Income | null>(null)
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT)
+
+  // Reset display count when filter changes or when data is refreshed
+  useEffect(() => {
+    setDisplayCount(INITIAL_DISPLAY_COUNT)
+  }, [categoryFilter, incomes.length])
+
+  // Ensure displayCount doesn't exceed array length
+  const safeDisplayCount = Math.min(displayCount, incomes.length)
+  const visibleIncomes = incomes.slice(0, safeDisplayCount)
+  const hasMore = incomes.length > safeDisplayCount
 
   const handleFilterChange = (category: string) => {
     setCategoryFilter(category)
+    setDisplayCount(INITIAL_DISPLAY_COUNT) // Reset display count on filter change
     onFilterChange({
       category: category === "all" ? undefined : (category as IncomeCategory),
+    })
+  }
+
+  const handleLoadMore = () => {
+    setDisplayCount((prev) => {
+      // Use current incomes.length to handle cases where array might have changed
+      const currentLength = incomes.length
+      const newCount = prev + LOAD_MORE_COUNT
+      return Math.min(newCount, currentLength)
     })
   }
 
@@ -194,7 +218,7 @@ export function IncomeTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                incomes.map((income, index) => (
+                visibleIncomes.map((income, index) => (
                   <TableRow
                     key={income.id}
                     className={`border-b transition-colors hover:bg-muted/60 ${
@@ -290,6 +314,18 @@ export function IncomeTable({
             </TableBody>
           </Table>
         </div>
+        {hasMore && !isLoading && visibleIncomes.length > 0 && (
+          <div className="border-t p-4 text-center">
+            <Button
+              variant="outline"
+              onClick={handleLoadMore}
+              className="w-full sm:w-auto"
+              disabled={isLoading}
+            >
+              Load More ({Math.max(0, incomes.length - safeDisplayCount)} remaining)
+            </Button>
+          </div>
+        )}
       </Card>
 
       <AddIncomeModal

@@ -54,6 +54,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         "users:delete",
         "roles:manage",
         "auth:reset-password",
+        "journal:view",
+        "journal:edit",
       ],
       MANAGER: [
         "dashboard:view",

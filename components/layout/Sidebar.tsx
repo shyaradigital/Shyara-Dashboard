@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
-import { LayoutDashboard, FileText, DollarSign, Users } from "lucide-react"
+import { LayoutDashboard, FileText, DollarSign, Users, BookOpen } from "lucide-react"
 
 interface NavItem {
   title: string
@@ -37,6 +37,12 @@ const navItems: NavItem[] = [
     href: "/users",
     icon: Users,
     permission: "users:view",
+  },
+  {
+    title: "Journal",
+    href: "/journal",
+    icon: BookOpen,
+    permission: "journal:view",
   },
 ]
 

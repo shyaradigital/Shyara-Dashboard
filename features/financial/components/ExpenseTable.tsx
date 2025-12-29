@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -43,6 +43,9 @@ const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   "Misc",
 ]
 
+const INITIAL_DISPLAY_COUNT = 5
+const LOAD_MORE_COUNT = 5
+
 export function ExpenseTable({
   expenses,
   isLoading,
@@ -54,11 +57,32 @@ export function ExpenseTable({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT)
+
+  // Reset display count when filter changes or when data is refreshed
+  useEffect(() => {
+    setDisplayCount(INITIAL_DISPLAY_COUNT)
+  }, [categoryFilter, expenses.length])
+
+  // Ensure displayCount doesn't exceed array length
+  const safeDisplayCount = Math.min(displayCount, expenses.length)
+  const visibleExpenses = expenses.slice(0, safeDisplayCount)
+  const hasMore = expenses.length > safeDisplayCount
 
   const handleFilterChange = (category: string) => {
     setCategoryFilter(category)
+    setDisplayCount(INITIAL_DISPLAY_COUNT) // Reset display count on filter change
     onFilterChange({
       category: category === "all" ? undefined : (category as ExpenseCategory),
+    })
+  }
+
+  const handleLoadMore = () => {
+    setDisplayCount((prev) => {
+      // Use current expenses.length to handle cases where array might have changed
+      const currentLength = expenses.length
+      const newCount = prev + LOAD_MORE_COUNT
+      return Math.min(newCount, currentLength)
     })
   }
 
@@ -149,7 +173,7 @@ export function ExpenseTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                expenses.map((expense, index) => (
+                visibleExpenses.map((expense, index) => (
                   <TableRow
                     key={expense.id}
                     className={`border-b transition-colors hover:bg-muted/60 ${
@@ -201,6 +225,18 @@ export function ExpenseTable({
             </TableBody>
           </Table>
         </div>
+        {hasMore && !isLoading && visibleExpenses.length > 0 && (
+          <div className="border-t p-4 text-center">
+            <Button
+              variant="outline"
+              onClick={handleLoadMore}
+              className="w-full sm:w-auto"
+              disabled={isLoading}
+            >
+              Load More ({Math.max(0, expenses.length - safeDisplayCount)} remaining)
+            </Button>
+          </div>
+        )}
       </Card>
 
       <AddExpenseModal

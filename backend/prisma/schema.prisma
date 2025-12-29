@@ -24,9 +24,11 @@ model User {
   lastLogin DateTime?
 
   // Relations
-  incomes   Income[]
-  expenses  Expense[]
-  documents Document[]
+  incomes      Income[]
+  expenses     Expense[]
+  documents    Document[]
+  journalsCreated Journal[] @relation("JournalCreatedBy")
+  journalsAssigned Journal[] @relation("JournalAssignedTo")
 
   @@map("users")
 }
@@ -127,5 +129,35 @@ model Document {
   @@index([status])
   @@index([invoiceDate])
   @@map("documents")
+}
+
+enum JournalType {
+  TASK
+  NOTE
+}
+
+model Journal {
+  id          String      @id @default(cuid())
+  title       String
+  content     String
+  type        JournalType
+  deadline    DateTime?
+  isCompleted Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  createdById String
+  createdBy   User        @relation("JournalCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedToId String?
+  assignedTo  User?       @relation("JournalAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([isCompleted])
+  @@index([deadline])
+  @@index([createdById])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@map("journals")
 }
 
