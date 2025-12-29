@@ -121,15 +121,16 @@ export function AddJournalModal({ open, onOpenChange, onSuccess }: AddJournalMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[600px] p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] w-full max-w-[95vw] flex-col gap-0 p-0 sm:max-w-[600px] sm:rounded-lg">
+        <DialogHeader className="shrink-0 border-b px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
           <DialogTitle>Create Journal Entry</DialogTitle>
           <DialogDescription>
             Add a new task or note to the journal
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-3 sm:space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+            <div className="space-y-3 sm:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input
@@ -211,7 +212,8 @@ export function AddJournalModal({ open, onOpenChange, onSuccess }: AddJournalMod
               </Select>
             </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+          </div>
+          <DialogFooter className="shrink-0 border-t px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4 flex-col sm:flex-row gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
