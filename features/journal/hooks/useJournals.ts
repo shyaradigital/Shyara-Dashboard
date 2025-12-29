@@ -11,6 +11,11 @@ export function useJournals(initialFilters?: JournalFilters) {
   const [error, setError] = useState<Error | null>(null)
   const [filters, setFilters] = useState<JournalFilters | undefined>(initialFilters)
 
+  // Sync filters when prop changes
+  useEffect(() => {
+    setFilters(initialFilters)
+  }, [initialFilters])
+
   const fetchJournals = useCallback(async () => {
     try {
       setLoading(true)

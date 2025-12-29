@@ -24,7 +24,7 @@ import type { JournalType, CreateJournalData } from "../types/journal"
 import { useJournal } from "../hooks/useJournal"
 import { usersApi } from "@/lib/api/users"
 import type { UserResponse } from "@/lib/api/users"
-import { Loader2 } from "lucide-react"
+import { Loader2, FileText, Calendar, User } from "lucide-react"
 
 interface AddJournalModalProps {
   open: boolean
@@ -121,100 +121,123 @@ export function AddJournalModal({ open, onOpenChange, onSuccess }: AddJournalMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-[95vw] flex-col gap-0 p-0 sm:max-w-[600px] sm:rounded-lg">
-        <DialogHeader className="shrink-0 border-b px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
-          <DialogTitle>Create Journal Entry</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="!w-[90vw] !max-w-[90vw] flex max-h-[85vh] flex-col gap-0 p-0 overflow-hidden sm:!w-[50vw] sm:!max-w-[50vw] lg:!w-[600px] lg:!max-w-[600px] xl:!w-[650px] xl:!max-w-[650px] sm:rounded-lg">
+        <DialogHeader className="shrink-0 border-b px-4 pb-3 pt-4 sm:px-6 sm:pb-3.5 sm:pt-4.5">
+          <DialogTitle className="text-lg sm:text-xl font-semibold">Create Journal Entry</DialogTitle>
+          <DialogDescription className="text-sm">
             Add a new task or note to the journal
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
-            <div className="space-y-3 sm:space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter title"
-                maxLength={200}
-                required
-              />
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                {title.length}/200 characters
-              </p>
-            </div>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4">
+            <div className="space-y-4">
+              {/* Required Fields Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-sm sm:text-base font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    Title *
+                  </Label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter title"
+                    maxLength={200}
+                    required
+                    className="h-10 text-sm sm:text-base"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {title.length}/200 characters
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="content">Content *</Label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Enter content"
-                rows={4}
-                maxLength={5000}
-                required
-              />
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                {content.length}/5000 characters
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="content" className="text-sm sm:text-base font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    Content *
+                  </Label>
+                  <Textarea
+                    id="content"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Enter content"
+                    rows={5}
+                    maxLength={5000}
+                    required
+                    className="resize-none text-sm sm:text-base"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {content.length}/5000 characters
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="type">Type *</Label>
-              <Select value={type} onValueChange={(value) => setType(value as JournalType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TASK">Task</SelectItem>
-                  <SelectItem value="NOTE">Note</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type" className="text-sm sm:text-base font-medium">Type *</Label>
+                  <Select value={type} onValueChange={(value) => setType(value as JournalType)}>
+                    <SelectTrigger className="h-10 text-sm sm:text-base">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="TASK">Task</SelectItem>
+                      <SelectItem value="NOTE">Note</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="deadline">Deadline (Optional)</Label>
-              <Input
-                id="deadline"
-                type="datetime-local"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-              />
-            </div>
+              {/* Optional Fields Section */}
+              <div className="space-y-4 pt-2 border-t border-border/50">
+                <p className="text-sm text-muted-foreground font-medium mb-2">Optional</p>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="deadline" className="text-sm sm:text-base font-medium flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    Deadline
+                  </Label>
+                  <Input
+                    id="deadline"
+                    type="datetime-local"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    className="h-10 text-sm sm:text-base"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="assignedTo">Assign To (Optional)</Label>
-              <Select value={assignedToId || "none"} onValueChange={(value) => setAssignedToId(value === "none" ? "" : value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select user" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {loadingUsers ? (
-                    <SelectItem value="loading" disabled>
-                      Loading users...
-                    </SelectItem>
-                  ) : users.length === 0 ? (
-                    <SelectItem value="no-users" disabled>
-                      No users available
-                    </SelectItem>
-                  ) : (
-                    users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name} ({user.email})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="assignedTo" className="text-sm sm:text-base font-medium flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    Assign To
+                  </Label>
+                  <Select value={assignedToId || "none"} onValueChange={(value) => setAssignedToId(value === "none" ? "" : value)}>
+                    <SelectTrigger className="h-10 text-sm sm:text-base">
+                      <SelectValue placeholder="Select user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {loadingUsers ? (
+                        <SelectItem value="loading" disabled>
+                          Loading users...
+                        </SelectItem>
+                      ) : users.length === 0 ? (
+                        <SelectItem value="no-users" disabled>
+                          No users available
+                        </SelectItem>
+                      ) : (
+                        users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name} ({user.email})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
-          </div>
-          <DialogFooter className="shrink-0 border-t px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4 flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+          <DialogFooter className="shrink-0 border-t px-4 pb-3 pt-3 sm:px-6 sm:pb-4 sm:pt-3.5 flex-col sm:flex-row gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto h-10 text-sm sm:text-base">
               Cancel
             </Button>
             <Button 
@@ -226,7 +249,7 @@ export function AddJournalModal({ open, onOpenChange, onSuccess }: AddJournalMod
                 title.trim().length > 200 || 
                 content.trim().length > 5000
               }
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto h-10 text-sm sm:text-base"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create
