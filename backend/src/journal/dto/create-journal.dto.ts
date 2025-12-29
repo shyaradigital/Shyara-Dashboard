@@ -29,11 +29,10 @@ export class CreateJournalDto {
   @IsDateString({}, { message: "Deadline must be a valid date" })
   deadline?: string;
 
-  @ApiProperty({ example: "user-id-123", required: false })
+  @ApiProperty({ example: "clx123abc456def", required: false })
   @IsOptional()
   @ValidateIf((o) => o.assignedToId !== undefined && o.assignedToId !== null && o.assignedToId !== "")
-  @IsString()
-  @IsUUID(4, { message: "Assigned user ID must be a valid UUID" })
-  assignedToId?: string | null;
+  @IsString({ message: "Assigned user ID must be a valid string" })
+  assignedToId?: string;
 }
 
