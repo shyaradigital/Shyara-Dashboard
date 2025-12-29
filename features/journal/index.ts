@@ -5,5 +5,6 @@ export * from "./hooks/useJournals"
 export * from "./components/JournalList"
 export * from "./components/JournalCard"
 export * from "./components/AddJournalModal"
-export * from "./components/JournalFilters"
+// JournalFilters component is not exported to avoid conflict with JournalFilters type
+// Import directly: import { JournalFilters } from "@/features/journal/components/JournalFilters"
 
